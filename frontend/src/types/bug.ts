@@ -10,6 +10,15 @@ export interface Bug {
   description: string;
   status: BugStatus;
   priority: BugPriority;
+  exception_class: string | null;
+  stack_trace: string | null;
+  url: string | null;
+  http_method: string | null;
+  user_agent: string | null;
+  environment: string | null;
+  occurrence_count: number;
+  last_occurred_at: string | null;
+  fingerprint: string | null;
   assigned_to: User | null;
   reported_by: User;
   related_lead: Lead | null;
@@ -35,6 +44,12 @@ export interface BugFormData {
   priority?: BugPriority;
   assigned_to_id?: string;
   related_lead_id?: string;
+  exception_class?: string;
+  stack_trace?: string;
+  url?: string;
+  http_method?: string;
+  user_agent?: string;
+  environment?: string;
 }
 
 export interface BugFilters {

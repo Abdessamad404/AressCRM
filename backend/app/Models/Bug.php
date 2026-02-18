@@ -16,6 +16,14 @@ class Bug extends Model
     protected $fillable = [
         'title', 'description', 'status', 'priority',
         'assigned_to_id', 'reported_by_id', 'related_lead_id',
+        'exception_class', 'stack_trace', 'url', 'http_method',
+        'user_agent', 'environment', 'occurrence_count',
+        'last_occurred_at', 'fingerprint',
+    ];
+
+    protected $casts = [
+        'last_occurred_at' => 'datetime',
+        'occurrence_count' => 'integer',
     ];
 
     protected static function boot(): void

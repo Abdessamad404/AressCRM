@@ -27,12 +27,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/leads/{lead}/status', [LeadController::class, 'updateStatus']);
     Route::delete('/leads/{lead}', [LeadController::class, 'destroy']);
 
-    // Bugs
+    // Bugs / Exception Monitoring
     Route::get('/bugs', [BugController::class, 'index']);
     Route::post('/bugs', [BugController::class, 'store']);
     Route::get('/bugs/{bug}', [BugController::class, 'show']);
     Route::put('/bugs/{bug}', [BugController::class, 'update']);
+    Route::patch('/bugs/{bug}/resolve', [ExceptionLogController::class, 'resolve']);
     Route::delete('/bugs/{bug}', [BugController::class, 'destroy']);
+
+    // Frontend error reporting (requires auth to prevent spam)
+    Route::post('/exceptions/report', [ExceptionLogController::class, 'report']);
 
     // Users (admin only)
     Route::middleware('role:admin')->group(function () {

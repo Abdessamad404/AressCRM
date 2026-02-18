@@ -10,9 +10,7 @@ import LeadShow from './pages/Leads/Show';
 import LeadEdit from './pages/Leads/Edit';
 import LeadKanban from './pages/Leads/Kanban';
 import BugsIndex from './pages/Bugs/Index';
-import BugCreate from './pages/Bugs/Create';
 import BugShow from './pages/Bugs/Show';
-import BugEdit from './pages/Bugs/Edit';
 import UsersIndex from './pages/Users/Index';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -54,9 +52,7 @@ export default function App() {
         <Route path="/leads/:id/edit" element={<LeadEdit />} />
 
         <Route path="/bugs" element={<BugsIndex />} />
-        <Route path="/bugs/create" element={<BugCreate />} />
         <Route path="/bugs/:id" element={<BugShow />} />
-        <Route path="/bugs/:id/edit" element={<BugEdit />} />
 
         <Route path="/users" element={<AdminRoute><UsersIndex /></AdminRoute>} />
       </Route>

@@ -3,7 +3,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
+import { Mail, Lock, AlertCircle, ArrowRight, Loader2, Sun, Moon, Zap, TrendingUp, Shield } from 'lucide-react';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -15,6 +16,7 @@ type FormData = z.infer<typeof schema>;
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const {
     register,
     handleSubmit,
@@ -27,36 +29,37 @@ export default function Login() {
       await login(data.email, data.password);
       navigate('/dashboard');
     } catch {
-      setError('root', { message: 'Invalid email or password. Please try again.' });
+      setError('root', { message: 'Invalid email or password.' });
     }
   };
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel — decorative */}
+      {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-700 via-primary-600 to-indigo-500 flex-col items-center justify-center p-12 relative overflow-hidden">
-        {/* Background blobs */}
         <div className="absolute top-[-80px] left-[-80px] w-80 h-80 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute bottom-[-60px] right-[-60px] w-72 h-72 bg-indigo-400/20 rounded-full blur-3xl" />
 
-        <div className="relative z-10 text-center">
+        <div className="relative z-10 text-center max-w-sm">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-2xl backdrop-blur-sm mb-8 shadow-lg">
             <span className="text-white font-black text-3xl tracking-tight">A</span>
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tight mb-4">Aress CRM</h1>
-          <p className="text-primary-100 text-lg leading-relaxed max-w-xs">
-            Manage your leads, track bugs, and grow your business — all in one place.
+          <h1 className="text-4xl font-black text-white tracking-tight mb-3">Aress CRM</h1>
+          <p className="text-primary-100 text-base leading-relaxed">
+            La plateforme tout-en-un pour augmenter vos ventes, gérer vos leads, et scaler votre force commerciale — payez au résultat.
           </p>
 
-          <div className="mt-12 grid grid-cols-3 gap-4">
+          <div className="mt-10 space-y-3">
             {[
-              { label: 'Leads', value: '30+' },
-              { label: 'Users', value: '6' },
-              { label: 'Tracked', value: '100%' },
-            ].map((stat) => (
-              <div key={stat.label} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-white">{stat.value}</div>
-                <div className="text-primary-200 text-xs mt-1">{stat.label}</div>
+              { icon: TrendingUp, label: 'Pipeline de ventes & suivi des deals' },
+              { icon: Zap, label: 'CRM · LMS · ATS · Analytics intégrés' },
+              { icon: Shield, label: 'Monitoring des exceptions en temps réel' },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 text-left">
+                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <Icon size={15} className="text-white" />
+                </div>
+                <p className="text-sm text-primary-100 font-medium">{label}</p>
               </div>
             ))}
           </div>
@@ -64,7 +67,16 @@ export default function Login() {
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-950">
+      <div className="flex-1 flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-950 relative">
+        {/* Theme toggle top-right */}
+        <button
+          onClick={toggleTheme}
+          className="absolute top-5 right-5 p-2.5 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Toggle theme"
+        >
+          {resolvedTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
@@ -79,7 +91,6 @@ export default function Login() {
             <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Sign in to your account to continue</p>
           </div>
 
-          {/* Error banner */}
           {errors.root && (
             <div className="mb-4 flex items-start gap-3 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-900/50 text-red-700 dark:text-red-400 text-sm">
               <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -88,11 +99,8 @@ export default function Login() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-            {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Email address
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email address</label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -107,18 +115,11 @@ export default function Login() {
                   }`}
                 />
               </div>
-              {errors.email && (
-                <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.email.message}</p>}
             </div>
 
-            {/* Password */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Password
-                </label>
-              </div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
@@ -133,45 +134,32 @@ export default function Login() {
                   }`}
                 />
               </div>
-              {errors.password && (
-                <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.password.message}</p>
-              )}
+              {errors.password && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.password.message}</p>}
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={isSubmitting}
               className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-all"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Signing in...
-                </>
+                <><Loader2 size={16} className="animate-spin" /> Signing in...</>
               ) : (
-                <>
-                  Sign in
-                  <ArrowRight size={16} />
-                </>
+                <>Sign in <ArrowRight size={16} /></>
               )}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-            Don't have an account?{' '}
-            <Link
-              to="/register"
-              className="text-primary-600 dark:text-primary-400 font-medium hover:underline"
-            >
+            No account?{' '}
+            <Link to="/register" className="text-primary-600 dark:text-primary-400 font-medium hover:underline">
               Create one
             </Link>
           </p>
 
-          {/* Demo hint */}
           <div className="mt-8 p-3.5 rounded-xl bg-primary-50 dark:bg-primary-950/40 border border-primary-100 dark:border-primary-900/40">
             <p className="text-xs font-medium text-primary-700 dark:text-primary-300 mb-1">Demo credentials</p>
-            <p className="text-xs text-primary-600 dark:text-primary-400">admin@aress.com / password</p>
+            <p className="text-xs text-primary-600 dark:text-primary-400">admin@aress.com · password</p>
           </div>
         </div>
       </div>

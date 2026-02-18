@@ -25,4 +25,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 return response()->json(['message' => 'Unauthenticated.'], 401);
             }
         });
+
+        // Auto-log unhandled exceptions to the bugs/error monitoring table
+        $exceptions->reportable(function (\Throwable $e) {
+            $request = request();
+            // Only log API errors, skip auth/validation exceptions (too noisy)
+            if (!($e instanceof \Illuminate\Auth\AuthenticationException)
+                && !($e instanceof \Illuminate\Validation\ValidationException)
+                && !($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException)
+                && !($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException)
+            ) {
+                \App\Http\Controllers\ExceptionLogController::logException($e, $request);
+            }
+        });
     })->create();

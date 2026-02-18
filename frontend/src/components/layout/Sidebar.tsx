@@ -3,10 +3,10 @@ import { LayoutDashboard, Users, Bug, Kanban, UserCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/leads', label: 'Leads', icon: Users },
-  { to: '/leads/kanban', label: 'Kanban', icon: Kanban },
-  { to: '/bugs', label: 'Bugs', icon: Bug },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/leads', label: 'Leads', icon: Users, end: true },
+  { to: '/leads/kanban', label: 'Kanban', icon: Kanban, end: true },
+  { to: '/bugs', label: 'Exceptions', icon: Bug, end: true },
 ];
 
 const adminItems = [
@@ -25,10 +25,11 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
+            end={end}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive

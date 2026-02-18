@@ -24,15 +24,19 @@ export default function LeadKanban() {
   const [columns, setColumns] = useState<Record<LeadStatus, Lead[]>>({
     New: [], Contacted: [], Interested: [], Negotiation: [], Won: [], Lost: [],
   });
-  const [initialized, setInitialized] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: leadsData } = useQuery({
     queryKey: ['leads-kanban'],
     queryFn: () => leadsApi.getAll({ per_page: 200 }),
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
+  // Re-group leads from server whenever data changes and user is not dragging
   useEffect(() => {
-    if (leadsData && !initialized) {
+    if (leadsData && !isDragging) {
       const grouped: Record<LeadStatus, Lead[]> = {
         New: [], Contacted: [], Interested: [], Negotiation: [], Won: [], Lost: [],
       };
@@ -40,19 +44,20 @@ export default function LeadKanban() {
         if (grouped[lead.status]) grouped[lead.status].push(lead);
       });
       setColumns(grouped);
-      setInitialized(true);
     }
-  }, [leadsData, initialized]);
+  }, [leadsData]);
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: LeadStatus }) =>
       leadsApi.updateStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['leads-kanban'] });
     },
   });
 
   const onDragEnd = (result: DropResult) => {
+    setIsDragging(false);
     const { source, destination, draggableId } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -91,7 +96,7 @@ export default function LeadKanban() {
         </div>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
+      <DragDropContext onDragStart={() => setIsDragging(true)} onDragEnd={onDragEnd}>
         <div className="flex gap-3 overflow-x-auto pb-4">
           {STATUSES.map((status) => (
             <div key={status} className="flex-shrink-0 w-64">

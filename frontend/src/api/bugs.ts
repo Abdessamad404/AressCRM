@@ -25,4 +25,21 @@ export const bugsApi = {
   delete: async (id: string): Promise<void> => {
     await api.delete(`/api/bugs/${id}`);
   },
+
+  resolve: async (id: string): Promise<Bug> => {
+    const response = await api.patch(`/api/bugs/${id}/resolve`);
+    return response.data.data;
+  },
+
+  reportException: async (data: {
+    title: string;
+    description?: string;
+    exception_class?: string;
+    stack_trace?: string;
+    url?: string;
+    user_agent?: string;
+    environment?: string;
+  }): Promise<void> => {
+    await api.post('/api/exceptions/report', data);
+  },
 };

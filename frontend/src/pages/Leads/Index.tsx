@@ -113,16 +113,31 @@ export default function LeadsIndex() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {(data?.last_page ?? 1) > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-700">
-            <p className="text-xs text-gray-500">Page {data?.current_page} of {data?.last_page}</p>
-            <div className="flex gap-2">
-              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="btn-secondary py-1.5 text-xs disabled:opacity-40">Prev</button>
-              <button disabled={page >= (data?.last_page ?? 1)} onClick={() => setPage(p => p + 1)} className="btn-secondary py-1.5 text-xs disabled:opacity-40">Next</button>
-            </div>
+        {/* Pagination — always visible */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-700">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {data ? `Showing ${(page - 1) * 15 + 1}–${Math.min(page * 15, data.total)} of ${data.total} leads` : 'Loading...'}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(p => p - 1)}
+              className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >← Prev</button>
+            {Array.from({ length: data?.last_page ?? 1 }, (_, i) => i + 1).map(p => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                className={p === page ? "w-8 h-8 text-xs rounded-lg bg-primary-600 text-white font-medium" : "w-8 h-8 text-xs rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"}
+              >{p}</button>
+            ))}
+            <button
+              disabled={page >= (data?.last_page ?? 1)}
+              onClick={() => setPage(p => p + 1)}
+              className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >Next →</button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
