@@ -1,10 +1,19 @@
 import api from './axios';
 import type { Lead, LeadFilters, LeadFormData, LeadStatus, PaginatedLeads } from '../types/lead';
 
+// Laravel ResourceCollection returns { data, links, meta } — flatten meta to top level
+const flattenPagination = (res: any): PaginatedLeads => ({
+  data: res.data,
+  current_page: res.meta?.current_page ?? res.current_page,
+  last_page: res.meta?.last_page ?? res.last_page,
+  per_page: res.meta?.per_page ?? res.per_page,
+  total: res.meta?.total ?? res.total,
+});
+
 export const leadsApi = {
   getAll: async (filters?: LeadFilters): Promise<PaginatedLeads> => {
     const response = await api.get('/api/leads', { params: filters });
-    return response.data;
+    return flattenPagination(response.data);
   },
 
   getOne: async (id: string): Promise<Lead> => {

@@ -1,10 +1,18 @@
 import api from './axios';
 import type { Bug, BugFilters, BugFormData, PaginatedBugs } from '../types/bug';
 
+const flattenPagination = (res: any): PaginatedBugs => ({
+  data: res.data,
+  current_page: res.meta?.current_page ?? res.current_page,
+  last_page: res.meta?.last_page ?? res.last_page,
+  per_page: res.meta?.per_page ?? res.per_page,
+  total: res.meta?.total ?? res.total,
+});
+
 export const bugsApi = {
   getAll: async (filters?: BugFilters): Promise<PaginatedBugs> => {
     const response = await api.get('/api/bugs', { params: filters });
-    return response.data;
+    return flattenPagination(response.data);
   },
 
   getOne: async (id: string): Promise<Bug> => {

@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   role: 'admin' | 'user';
+  client_type: 'commercial' | 'entreprise' | null;
   theme_preference: 'light' | 'dark' | 'system';
   created_at: string;
   updated_at: string;
@@ -18,6 +19,7 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   password_confirmation: string;
+  client_type?: 'commercial' | 'entreprise';
 }
 
 export interface AuthState {

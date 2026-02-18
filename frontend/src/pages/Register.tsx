@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -5,13 +6,14 @@ import { authApi } from '../api/auth';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { User, Mail, Lock, AlertCircle, ArrowRight, Loader2, Sun, Moon } from 'lucide-react';
+import { User, Mail, Lock, AlertCircle, ArrowRight, Loader2, Sun, Moon, Briefcase, TrendingUp } from 'lucide-react';
 
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   password_confirmation: z.string(),
+  client_type: z.enum(['commercial', 'entreprise']).optional(),
 }).refine((d) => d.password === d.password_confirmation, {
   message: 'Passwords do not match',
   path: ['password_confirmation'],
@@ -52,15 +54,27 @@ export default function Register() {
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const { resolvedTheme, toggleTheme } = useTheme();
-  const { register, handleSubmit, formState: { errors, isSubmitting }, setError } = useForm<FormData>({
+  const [clientType, setClientType] = useState<'commercial' | 'entreprise' | null>(null);
+
+  const { register, handleSubmit, formState: { errors, isSubmitting }, setError, setValue } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
+  const selectClientType = (type: 'commercial' | 'entreprise') => {
+    setClientType(type);
+    setValue('client_type', type);
+  };
+
   const onSubmit = async (data: FormData) => {
     try {
-      const user = await authApi.register(data);
+      const user = await authApi.register({ ...data, client_type: clientType ?? undefined });
       setUser(user);
-      navigate('/dashboard');
+      // Redirect based on account type
+      if (user.client_type) {
+        navigate('/client/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch {
       setError('root', { message: 'Registration failed. Please try again.' });
     }
@@ -84,7 +98,7 @@ export default function Register() {
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-950 relative">
+      <div className="flex-1 flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-950 relative overflow-y-auto">
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -94,7 +108,7 @@ export default function Register() {
           {resolvedTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-sm py-8">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
@@ -103,9 +117,52 @@ export default function Register() {
             <span className="text-xl font-bold text-gray-900 dark:text-white">Aress CRM</span>
           </div>
 
-          <div className="mb-8">
+          <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create account</h2>
-            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Fill in your details to get started</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Choose your account type to get started</p>
+          </div>
+
+          {/* Account type selector */}
+          <div className="mb-6">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">I am a...</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => selectClientType('commercial')}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center ${
+                  clientType === 'commercial'
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <TrendingUp size={24} />
+                <div>
+                  <p className="text-sm font-semibold">Commercial</p>
+                  <p className="text-xs opacity-70 mt-0.5">Salesperson / Freelance</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => selectClientType('entreprise')}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center ${
+                  clientType === 'entreprise'
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <Briefcase size={24} />
+                <div>
+                  <p className="text-sm font-semibold">Entreprise</p>
+                  <p className="text-xs opacity-70 mt-0.5">Company / Business</p>
+                </div>
+              </button>
+            </div>
+            {!clientType && (
+              <p className="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
+                Leave blank for internal/admin account
+              </p>
+            )}
           </div>
 
           {errors.root && (

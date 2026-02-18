@@ -21,6 +21,7 @@ class User extends Authenticatable
         'password',
         'role',
         'theme_preference',
+        'client_type',
     ];
 
     protected $hidden = [
@@ -60,5 +61,46 @@ class User extends Authenticatable
     public function reportedBugs()
     {
         return $this->hasMany(Bug::class, 'reported_by_id');
+    }
+
+    // Client relations
+    public function profile()
+    {
+        return $this->hasOne(Profile::class);
+    }
+
+    public function jobOffers()
+    {
+        return $this->hasMany(JobOffer::class);
+    }
+
+    public function quizzes()
+    {
+        return $this->hasMany(Quiz::class, 'created_by_id');
+    }
+
+    public function quizSubmissions()
+    {
+        return $this->hasMany(QuizSubmission::class);
+    }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    public function isCommercial(): bool
+    {
+        return $this->client_type === 'commercial';
+    }
+
+    public function isEntreprise(): bool
+    {
+        return $this->client_type === 'entreprise';
     }
 }
