@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { bugsApi } from '../../api/bugs';
 import { leadsApi } from '../../api/leads';
 import api from '../../api/axios';
@@ -23,9 +23,15 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function BugCreate() {
+export default function BugEdit() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const { data: bug, isLoading } = useQuery({
+    queryKey: ['bug', id],
+    queryFn: () => bugsApi.getOne(id!),
+  });
 
   const { data: users } = useQuery({
     queryKey: ['users-list'],
@@ -40,26 +46,42 @@ export default function BugCreate() {
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { status: 'open', priority: 'medium' },
+    values: bug ? {
+      title: bug.title,
+      description: bug.description,
+      status: bug.status,
+      priority: bug.priority,
+      assigned_to_id: bug.assigned_to?.id ?? '',
+      related_lead_id: bug.related_lead?.id ?? '',
+    } : undefined,
   });
 
   const mutation = useMutation({
-    mutationFn: (data: BugFormData) => bugsApi.create(data),
+    mutationFn: (data: Partial<BugFormData>) => bugsApi.update(id!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bugs'] });
-      navigate('/bugs');
+      queryClient.invalidateQueries({ queryKey: ['bug', id] });
+      navigate(`/bugs/${id}`);
     },
   });
 
-  const onSubmit = (data: FormData) => mutation.mutate(data as BugFormData);
+  const onSubmit = (data: FormData) => mutation.mutate(data as Partial<BugFormData>);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate(-1)} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"><ArrowLeft size={18} /></button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Report Bug</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Submit a new bug report</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Bug</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{bug?.title}</p>
         </div>
       </div>
 
@@ -106,12 +128,12 @@ export default function BugCreate() {
             </div>
           </div>
 
-          {mutation.isError && <p className="text-sm text-rose-500">Failed to create bug. Please try again.</p>}
+          {mutation.isError && <p className="text-sm text-rose-500">Failed to update bug. Please try again.</p>}
 
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={() => navigate(-1)} className="btn-secondary">Cancel</button>
             <button type="submit" disabled={isSubmitting || mutation.isPending} className="btn-primary">
-              {(isSubmitting || mutation.isPending) ? <><Loader2 size={15} className="animate-spin" /> Submitting...</> : 'Submit Bug'}
+              {(isSubmitting || mutation.isPending) ? <><Loader2 size={15} className="animate-spin" /> Saving...</> : 'Save Changes'}
             </button>
           </div>
         </form>
