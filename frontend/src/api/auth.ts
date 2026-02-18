@@ -1,9 +1,13 @@
+import axios from 'axios';
 import api from './axios';
 import type { LoginCredentials, RegisterCredentials, User } from '../types/auth';
 
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+
 export const authApi = {
-  /** Must be called before login to get CSRF cookie from Sanctum */
-  getCsrfCookie: () => api.get('/sanctum/csrf-cookie'),
+  /** Fetch CSRF cookie using a plain axios call (no interceptors) */
+  getCsrfCookie: () =>
+    axios.get(`${BASE_URL}/sanctum/csrf-cookie`, { withCredentials: true }),
 
   login: async (credentials: LoginCredentials): Promise<User> => {
     await authApi.getCsrfCookie();

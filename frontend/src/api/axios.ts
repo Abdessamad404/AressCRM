@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000',
+  baseURL: BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -11,22 +13,24 @@ const api = axios.create({
 
 // Attach CSRF token from cookie to every mutating request
 api.interceptors.request.use((config) => {
-  const token = document.cookie
+  const match = document.cookie
     .split('; ')
-    .find((row) => row.startsWith('XSRF-TOKEN='))
-    ?.split('=')[1];
+    .find((row) => row.startsWith('XSRF-TOKEN='));
 
-  if (token) {
-    config.headers['X-XSRF-TOKEN'] = decodeURIComponent(token);
+  if (match) {
+    config.headers['X-XSRF-TOKEN'] = decodeURIComponent(match.split('=')[1]);
   }
   return config;
 });
 
-// Redirect to login on 401
+// Only redirect on 401 if not already on an auth route
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthRoute = ['/api/login', '/api/register', '/api/user', '/sanctum/csrf-cookie'].some(
+      (path) => error.config?.url?.includes(path)
+    );
+    if (error.response?.status === 401 && !isAuthRoute) {
       window.location.href = '/login';
     }
     return Promise.reject(error);
