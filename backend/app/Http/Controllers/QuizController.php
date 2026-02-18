@@ -272,7 +272,47 @@ class QuizController extends Controller
             'submitted_at' => Carbon::now(),
         ]);
 
-        return response()->json(['data' => $submission], 201);
+        // ─── Build per-question result for the entreprise reviewer ───────────────
+        $submittedAnswers  = $validated['answers'] ?? [];
+        $questionResults   = [];
+
+        foreach ($questions as $q) {
+            $userAnswer  = $submittedAnswers[$q->id] ?? null;
+            $isGradeable = in_array($q->type, ['multiple_choice', 'true_false']);
+            $isCorrect   = $isGradeable
+                ? ($userAnswer !== null && (string) $userAnswer === (string) $q->correct_answer)
+                : null; // null = pending manual review
+
+            $questionResults[] = [
+                'id'             => $q->id,
+                'question'       => $q->question,
+                'type'           => $q->type,
+                'options'        => $q->options,
+                'correct_answer' => $isGradeable ? $q->correct_answer : null,
+                'user_answer'    => $userAnswer,
+                'points'         => $q->points,
+                'points_earned'  => $isCorrect === true ? $q->points : ($isCorrect === false ? 0 : null),
+                'is_correct'     => $isCorrect,
+            ];
+        }
+
+        // Percentage based on auto-gradeable questions only
+        $autoMax    = $gradeable->sum('points');
+        $percentage = $autoMax > 0 ? (int) round(($score / $autoMax) * 100) : null;
+
+        $essayResult = $quiz->essay_prompt ? [
+            'prompt'      => $quiz->essay_prompt,
+            'user_answer' => $validated['essay_answer'] ?? null,
+        ] : null;
+
+        return response()->json([
+            'data' => array_merge($submission->toArray(), [
+                'percentage'       => $percentage,
+                'passed'           => $percentage !== null ? $percentage >= 50 : null,
+                'question_results' => $questionResults,
+                'essay_result'     => $essayResult,
+            ]),
+        ], 201);
     }
 
     /**
@@ -287,10 +327,49 @@ class QuizController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        $submissions = QuizSubmission::with('user')
+        // Load questions alongside so the frontend can build per-question breakdown
+        $questions = $quiz->questions()->orderBy('order')->get();
+
+        $submissions = QuizSubmission::with(['user:id,name,email'])
             ->where('quiz_id', $quiz->id)
             ->orderByDesc('submitted_at')
             ->paginate(20);
+
+        // Enrich each submission with computed question_results
+        $submissions->getCollection()->transform(function ($sub) use ($questions) {
+            $submittedAnswers = $sub->answers ?? [];
+            $questionResults  = [];
+
+            foreach ($questions as $q) {
+                $userAnswer  = $submittedAnswers[$q->id] ?? null;
+                $isGradeable = in_array($q->type, ['multiple_choice', 'true_false']);
+                $isCorrect   = $isGradeable
+                    ? ($userAnswer !== null && (string) $userAnswer === (string) $q->correct_answer)
+                    : null;
+
+                $questionResults[] = [
+                    'id'             => $q->id,
+                    'question'       => $q->question,
+                    'type'           => $q->type,
+                    'options'        => $q->options,
+                    'correct_answer' => $isGradeable ? $q->correct_answer : null,
+                    'user_answer'    => $userAnswer,
+                    'points'         => $q->points,
+                    'points_earned'  => $isCorrect === true ? $q->points : ($isCorrect === false ? 0 : null),
+                    'is_correct'     => $isCorrect,
+                ];
+            }
+
+            $gradeable  = $questions->whereIn('type', ['multiple_choice', 'true_false']);
+            $autoMax    = $gradeable->sum('points');
+            $percentage = $autoMax > 0 ? (int) round(($sub->score / $autoMax) * 100) : null;
+
+            $sub->question_results = $questionResults;
+            $sub->percentage       = $percentage;
+            $sub->passed           = $percentage !== null ? $percentage >= 50 : null;
+
+            return $sub;
+        });
 
         return response()->json($submissions);
     }

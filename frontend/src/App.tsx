@@ -24,6 +24,7 @@ import QuizForm from './pages/Client/QuizForm';
 import QuizTake from './pages/Client/QuizTake';
 import TalentBrowser from './pages/Client/Talent';
 import { ConversationsList, MessageThread } from './pages/Client/Messages';
+import QuizSubmissions from './pages/Client/QuizSubmissions';
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 
@@ -101,10 +102,11 @@ export default function App() {
         <Route path="/client/profile" element={<CommercialProfile />} />
 
         {/* Quizzes */}
-        <Route path="/client/quizzes"          element={<QuizzesPage />} />
-        <Route path="/client/quizzes/create"   element={<QuizForm />} />
-        <Route path="/client/quizzes/:id"      element={<QuizTake />} />
-        <Route path="/client/quizzes/:id/edit" element={<QuizForm />} />
+        <Route path="/client/quizzes"                    element={<QuizzesPage />} />
+        <Route path="/client/quizzes/create"             element={<QuizForm />} />
+        <Route path="/client/quizzes/:id"                element={<QuizTake />} />
+        <Route path="/client/quizzes/:id/edit"           element={<QuizForm />} />
+        <Route path="/client/quizzes/:id/submissions"    element={<QuizSubmissions />} />
 
         {/* Talent browser (entreprise) */}
         <Route path="/client/talent" element={<TalentBrowser />} />

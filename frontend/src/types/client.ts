@@ -87,6 +87,31 @@ export interface QuizSubmission {
   user?: { id: string; name: string; email: string };
 }
 
+// ─── Quiz Submission Result (enriched response from submit endpoint) ──────────
+export interface QuestionResult {
+  id: string;
+  question: string;
+  type: 'multiple_choice' | 'true_false' | 'short_answer';
+  options: string[] | null;
+  correct_answer: string | null;   // null for short_answer
+  user_answer: string | null;
+  points: number;
+  points_earned: number | null;    // null = pending review (short_answer)
+  is_correct: boolean | null;      // null = pending review (short_answer)
+}
+
+export interface EssayResult {
+  prompt: string;
+  user_answer: string | null;
+}
+
+export interface QuizSubmissionResult extends QuizSubmission {
+  percentage: number | null;       // null when no auto-gradeable questions
+  passed: boolean | null;          // null when no auto-gradeable questions
+  question_results: QuestionResult[];
+  essay_result: EssayResult | null;
+}
+
 // ─── Messaging ────────────────────────────────────────────────────────────────
 export interface Message {
   id: string;

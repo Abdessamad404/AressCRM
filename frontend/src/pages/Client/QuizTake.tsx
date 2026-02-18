@@ -69,7 +69,6 @@ export default function QuizTake() {
   const currentQuestion = !isEssayStep ? questions[currentStep] : null;
 
   if (submitted) {
-    const result = submitMutation.data;
     return (
       <div className="p-8 flex items-center justify-center min-h-screen">
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 max-w-sm w-full text-center space-y-4">
@@ -77,18 +76,9 @@ export default function QuizTake() {
             <CheckCircle size={32} className="text-green-600 dark:text-green-400" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Quiz Submitted!</h2>
-          {result && (
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-              <p className="text-3xl font-black text-primary-600 dark:text-primary-400">
-                {result.score} / {result.max_score}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">points scored</p>
-            </div>
-          )}
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {quiz.essay_prompt
-              ? 'Your essay will be reviewed by the entreprise.'
-              : 'Your results have been submitted.'}
+            Your answers have been sent to the entreprise.
+            {quiz.essay_prompt ? ' Your essay will be reviewed.' : ''}
           </p>
           <button onClick={() => navigate('/client/quizzes')}
             className="w-full px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl transition-colors">

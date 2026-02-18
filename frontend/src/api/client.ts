@@ -1,6 +1,6 @@
 import api from './axios';
 import type {
-  Profile, JobOffer, Quiz, QuizQuestion, QuizSubmission, Message, Conversation, Paginated
+  Profile, JobOffer, Quiz, QuizQuestion, QuizSubmission, QuizSubmissionResult, Message, Conversation, Paginated
 } from '../types/client';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -108,14 +108,14 @@ export const quizApi = {
     await api.delete(`/api/client/quizzes/${quizId}/questions/${questionId}`);
   },
 
-  submit: async (quizId: string, data: { answers?: Record<string, string>; essay_answer?: string }): Promise<QuizSubmission> => {
+  submit: async (quizId: string, data: { answers?: Record<string, string>; essay_answer?: string }): Promise<QuizSubmissionResult> => {
     const res = await api.post(`/api/client/quizzes/${quizId}/submit`, data);
     return res.data.data;
   },
 
-  getSubmissions: async (quizId: string): Promise<Paginated<QuizSubmission>> => {
-    const res = await api.get(`/api/client/quizzes/${quizId}/submissions`);
-    return flatPage<QuizSubmission>(res.data);
+  getSubmissions: async (quizId: string, page = 1): Promise<Paginated<QuizSubmissionResult>> => {
+    const res = await api.get(`/api/client/quizzes/${quizId}/submissions`, { params: { page } });
+    return flatPage<QuizSubmissionResult>(res.data);
   },
 
   reviewSubmission: async (quizId: string, submissionId: string, data: { reviewer_notes?: string; score?: number }): Promise<QuizSubmission> => {
