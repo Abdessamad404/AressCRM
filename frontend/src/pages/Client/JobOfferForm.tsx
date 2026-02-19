@@ -40,7 +40,7 @@ export default function JobOfferForm() {
   });
 
   const { register, control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: { status: 'draft', compensation_type: 'commission', requirements: [], benefits: [] },
   });
 
@@ -104,7 +104,7 @@ export default function JobOfferForm() {
     },
   });
 
-  const onSubmit = (data: FormData) => mutation.mutateAsync(data).catch(() => {});
+  const onSubmit = ((data: unknown) => mutation.mutateAsync(data as FormData).catch(() => {})) as unknown as (data: FormData) => void;
 
   return (
     <div className="p-8 max-w-2xl mx-auto">

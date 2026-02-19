@@ -2,7 +2,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { jobOfferApi, quizApi, messageApi } from '../../api/client';
-import { Briefcase, BookOpen, MessageCircle, TrendingUp, ArrowRight, Star, Clock } from 'lucide-react';
+import { Briefcase, BookOpen, MessageCircle, TrendingUp, ArrowRight } from 'lucide-react';
 
 export default function ClientDashboard() {
   const { user } = useAuth();

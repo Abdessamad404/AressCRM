@@ -23,10 +23,6 @@ const STATUS_LABELS: Record<string, string> = {
   rejected:    'Rejected',
 };
 
-const COMP_LABELS: Record<string, string> = {
-  commission:   '% Commission',
-  fixed_budget: 'Fixed Budget',
-};
 
 export default function MyApplications() {
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -72,7 +68,6 @@ export default function MyApplications() {
       {data && (
         <div className="grid grid-cols-4 gap-3 mb-6">
           {(['pending', 'shortlisted', 'accepted', 'rejected'] as const).map((s) => {
-            const count = applications.filter((a) => a.status === s).length;
             // Use total from current page — we'll just show total for current filter
             return (
               <button

@@ -77,8 +77,8 @@ export default function CommercialProfile() {
     queryFn: profileApi.getMyProfile,
   });
 
-  const { register, control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+  const { register, control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+    resolver: zodResolver(schema) as any,
     defaultValues: { is_published: false, skills: [], expertise: [], sectors: [], achievements: [] },
   });
 
@@ -165,7 +165,7 @@ export default function CommercialProfile() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit((data) => mutation.mutateAsync(data).catch(() => {}))} className="space-y-5">
+      <form onSubmit={handleSubmit(((data: unknown) => mutation.mutateAsync(data as FormData).catch(() => {})) as unknown as (data: FormData) => void)} className="space-y-5">
         {/* Identity */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Identity</h2>

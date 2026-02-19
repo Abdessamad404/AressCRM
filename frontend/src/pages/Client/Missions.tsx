@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { applicationApi } from '../../api/client';
 import {
   Briefcase, MapPin, TrendingUp, Clock,
-  Loader2, RocketIcon, BookOpen, MessageCircle, ChevronRight,
+  Loader2, RocketIcon, BookOpen, MessageCircle,
 } from 'lucide-react';
 import { formatRelativeTime } from '../../utils/helpers';
 import type { Application } from '../../types/client';

@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Briefcase, User, BookOpen, MessageCircle,
-  LogOut, Sun, Moon, Bell, ChevronDown, TrendingUp, PlusCircle,
+  LogOut, Sun, Moon, TrendingUp, PlusCircle,
   ClipboardList, Rocket, Building2,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';

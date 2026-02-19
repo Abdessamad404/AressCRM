@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { quizApi } from '../../api/client';
-import { Plus, Trash2, Loader2, ArrowLeft, GripVertical, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Loader2, ArrowLeft, GripVertical } from 'lucide-react';
 
 const questionSchema = z.object({
   question:       z.string().min(1, 'Question text required'),
@@ -42,7 +42,7 @@ export default function QuizForm() {
   });
 
   const { register, control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       is_published: false,
       questions: [],

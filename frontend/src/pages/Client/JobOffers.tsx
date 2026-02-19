@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { jobOfferApi } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -25,7 +25,6 @@ const APPLICATION_STATUS_STYLES: Record<string, string> = {
 
 export default function JobOffersPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isEntreprise = user?.client_type === 'entreprise';
 
