@@ -14,6 +14,9 @@ use App\Http\Controllers\QuizController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\MessageController;
 
+// Health check (Render uses this to know the container is ready)
+Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
 // Auth routes (guest)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
