@@ -20,6 +20,7 @@ RUN apk add --no-cache \
         supervisor \
         libpng-dev \
         libzip-dev \
+        libpq-dev \
         zip \
         unzip \
         curl \
