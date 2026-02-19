@@ -28,7 +28,6 @@ php artisan migrate --force
 echo "==> Optimising..."
 php artisan config:cache
 php artisan route:cache
-php artisan view:cache
 
 # Fix storage permissions
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
