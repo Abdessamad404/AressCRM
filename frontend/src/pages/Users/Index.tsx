@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
-import { Search, Shield, User, Briefcase, TrendingUp, BarChart2 } from 'lucide-react';
+import { Search, Shield, Briefcase, TrendingUp, BarChart2 } from 'lucide-react';
 import { formatRelativeTime } from '../../utils/helpers';
 import { useAuth } from '../../contexts/AuthContext';
 import type { User as UserType } from '../../types/auth';
@@ -17,12 +17,12 @@ function roleBadge(user: UserType) {
   if (user.client_type === 'commercial') {
     return { label: 'Commercial', icon: <TrendingUp size={10} />, cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' };
   }
-  return { label: 'Agent', icon: <User size={10} />, cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' };
+  return { label: 'User', icon: <Shield size={10} />, cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' };
 }
 
 export default function UsersIndex() {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'admin' | 'agent' | 'entreprise' | 'commercial'>('all');
+  const [filter, setFilter] = useState<'all' | 'admin' | 'entreprise' | 'commercial'>('all');
   const { user: me } = useAuth();
 
   const { data: users, isLoading } = useQuery({
@@ -34,7 +34,6 @@ export default function UsersIndex() {
   });
 
   const adminCount      = (users ?? []).filter(u => u.role === 'admin').length;
-  const agentCount      = (users ?? []).filter(u => u.role === 'user' && !u.client_type).length;
   const entrepriseCount = (users ?? []).filter(u => u.client_type === 'entreprise').length;
   const commercialCount = (users ?? []).filter(u => u.client_type === 'commercial').length;
 
@@ -45,7 +44,6 @@ export default function UsersIndex() {
     const matchFilter =
       filter === 'all'        ? true :
       filter === 'admin'      ? u.role === 'admin' :
-      filter === 'agent'      ? (u.role === 'user' && !u.client_type) :
       filter === 'entreprise' ? u.client_type === 'entreprise' :
       filter === 'commercial' ? u.client_type === 'commercial' : true;
     return matchSearch && matchFilter;
@@ -57,7 +55,7 @@ export default function UsersIndex() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Team & Clients</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {adminCount} admin · {agentCount} agent{agentCount !== 1 ? 's' : ''} · {entrepriseCount} entreprise · {commercialCount} commercial
+            {adminCount} admin · {entrepriseCount} entreprise · {commercialCount} commercial
           </p>
         </div>
       </div>
@@ -74,7 +72,7 @@ export default function UsersIndex() {
           />
         </div>
         <div className="flex gap-1 flex-wrap">
-          {(['all', 'admin', 'agent', 'entreprise', 'commercial'] as const).map(f => (
+          {(['all', 'admin', 'entreprise', 'commercial'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
