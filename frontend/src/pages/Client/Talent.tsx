@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { profileApi } from '../../api/client';
-import { MapPin, TrendingUp, Briefcase, MessageCircle, Star, ChevronRight } from 'lucide-react';
+import { MapPin, TrendingUp, Briefcase, MessageCircle, ChevronRight } from 'lucide-react';
 import { SECTORS } from './JobOfferForm';
 
 export default function TalentBrowser() {

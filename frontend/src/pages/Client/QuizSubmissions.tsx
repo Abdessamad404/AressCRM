@@ -8,11 +8,6 @@ import {
 } from 'lucide-react';
 import type { QuizSubmissionResult, QuestionResult } from '../../types/client';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function pct(n: number | null | undefined): string {
-  return n == null ? '—' : `${n}%`;
-}
 
 function ScoreBadge({ percentage, passed }: { percentage: number | null; passed: boolean | null }) {
   if (percentage === null) {
