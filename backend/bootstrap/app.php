@@ -18,8 +18,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Force all /api/* routes to always return JSON — even for multipart/form-data
+        // requests that don't send Accept: application/json.
+        // Without this, any unhandled exception renders an HTML page, which has no
+        // CORS headers, causing the browser to report a CORS error instead of the real 500.
+        $exceptions->shouldRenderJsonWhen(function (Request $request) {
+            return $request->is('api/*') || $request->expectsJson();
+        });
+
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);
             }
         });
