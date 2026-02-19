@@ -26,7 +26,7 @@ services:
         fromService:
           type: web
           name: aresscrm-api
-          property: hostWithScheme
+          property: host
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
@@ -65,7 +65,7 @@ services:
         fromService:
           type: web
           name: aresscrm-frontend
-          property: hostWithScheme
+          property: host
       - key: SANCTUM_STATEFUL_DOMAINS
         fromService:
           type: web
@@ -100,4 +100,4 @@ services:
         fromService:
           type: web
           name: aresscrm-api
-          property: hostWithScheme
+          property: host

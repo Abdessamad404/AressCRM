@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+// Render's `host` property gives bare hostname — ensure https:// is present
+const rawApiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+const BASE_URL = rawApiUrl.startsWith('http') ? rawApiUrl : `https://${rawApiUrl}`;
 
 const api = axios.create({
   baseURL: BASE_URL,
