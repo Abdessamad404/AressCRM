@@ -19,7 +19,6 @@ class LeadResource extends JsonResource
             'status'      => $this->status,
             'notes'       => $this->notes,
             'created_by'  => $this->whenLoaded('createdBy', fn() => new UserResource($this->createdBy)),
-            'assigned_to' => $this->whenLoaded('assignedTo', fn() => new UserResource($this->assignedTo)),
             'history'     => $this->whenLoaded('history', fn() => HistoryResource::collection($this->history)),
             'created_at'  => $this->created_at,
             'updated_at'  => $this->updated_at,

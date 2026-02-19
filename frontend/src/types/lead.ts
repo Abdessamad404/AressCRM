@@ -13,7 +13,6 @@ export interface Lead {
   status: LeadStatus;
   notes: string | null;
   created_by: User | null;
-  assigned_to: User | null;
   history?: LeadHistory[];
   created_at: string;
   updated_at: string;
@@ -37,14 +36,12 @@ export interface LeadFormData {
   source?: LeadSource;
   status?: LeadStatus;
   notes?: string;
-  assigned_to_id?: string;
 }
 
 export interface LeadFilters {
   search?: string;
   status?: LeadStatus;
   source?: LeadSource;
-  assigned_to_id?: string;
   page?: number;
   per_page?: number;
 }

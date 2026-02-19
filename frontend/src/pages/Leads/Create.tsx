@@ -1,10 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { leadsApi } from '../../api/leads';
-import api from '../../api/axios';
 import type { LeadFormData } from '../../types/lead';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
@@ -19,7 +18,6 @@ const schema = z.object({
   source: z.enum(SOURCES).optional(),
   status: z.enum(STATUSES).optional(),
   notes: z.string().optional(),
-  assigned_to_id: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -27,11 +25,6 @@ type FormData = z.infer<typeof schema>;
 export default function LeadCreate() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const { data: users } = useQuery({
-    queryKey: ['users-list'],
-    queryFn: async () => { const r = await api.get('/api/users'); return r.data.data; },
-  });
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -90,13 +83,6 @@ export default function LeadCreate() {
               <label className="label">Status</label>
               <select {...register('status')} className="input">
                 {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label">Assign To</label>
-              <select {...register('assigned_to_id')} className="input">
-                <option value="">Unassigned</option>
-                {(users ?? []).filter((u: any) => !u.client_type).map((u: any) => <option key={u.id} value={u.id}>{u.name} {u.role === 'admin' ? '(admin)' : ''}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">

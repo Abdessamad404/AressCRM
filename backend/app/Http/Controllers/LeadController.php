@@ -13,12 +13,7 @@ class LeadController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Lead::with(['createdBy', 'assignedTo']);
-
-        // Role-based filtering
-        if ($request->user()->role !== 'admin') {
-            $query->where('assigned_to_id', $request->user()->id);
-        }
+        $query = Lead::with(['createdBy']);
 
         // Search
         if ($search = $request->query('search')) {
@@ -36,9 +31,6 @@ class LeadController extends Controller
         if ($source = $request->query('source')) {
             $query->where('source', $source);
         }
-        if ($assignedTo = $request->query('assigned_to_id')) {
-            $query->where('assigned_to_id', $assignedTo);
-        }
 
         $leads = $query->latest()->paginate($request->query('per_page', 15));
 
@@ -52,7 +44,7 @@ class LeadController extends Controller
             ['created_by_id' => $request->user()->id]
         ));
 
-        return response()->json(['data' => new LeadResource($lead->load(['createdBy', 'assignedTo']))], 201);
+        return response()->json(['data' => new LeadResource($lead->load(['createdBy']))], 201);
     }
 
     public function show(Lead $lead): JsonResponse
@@ -66,7 +58,7 @@ class LeadController extends Controller
     {
         $lead->update($request->validated());
 
-        return response()->json(['data' => new LeadResource($lead->load(['createdBy', 'assignedTo']))]);
+        return response()->json(['data' => new LeadResource($lead->load(['createdBy']))]);
     }
 
     public function updateStatus(Request $request, Lead $lead): JsonResponse
@@ -77,7 +69,7 @@ class LeadController extends Controller
 
         $lead->update(['status' => $request->status]);
 
-        return response()->json(['data' => new LeadResource($lead->load(['createdBy', 'assignedTo']))]);
+        return response()->json(['data' => new LeadResource($lead->load(['createdBy']))]);
     }
 
     public function destroy(Lead $lead): JsonResponse

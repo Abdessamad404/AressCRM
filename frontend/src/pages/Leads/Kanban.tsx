@@ -128,9 +128,6 @@ export default function LeadKanban() {
                             {lead.company && (
                               <p className="text-xs text-gray-400 mt-0.5 truncate">{lead.company}</p>
                             )}
-                            {lead.assigned_to && (
-                              <p className="text-xs text-indigo-500 mt-1 truncate">@{lead.assigned_to.name}</p>
-                            )}
                             <div className="flex items-center gap-1 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                               <Link
                                 to={`/leads/${lead.id}`}

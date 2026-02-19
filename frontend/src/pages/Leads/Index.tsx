@@ -73,16 +73,15 @@ export default function LeadsIndex() {
                 <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Company</th>
                 <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Status</th>
                 <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Source</th>
-                <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Assigned To</th>
                 <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
-                <tr><td colSpan={6} className="text-center py-10 text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={5} className="text-center py-10 text-gray-400">Loading...</td></tr>
               )}
               {!isLoading && (data?.data ?? []).length === 0 && (
-                <tr><td colSpan={6} className="text-center py-10 text-gray-400">No leads found.</td></tr>
+                <tr><td colSpan={5} className="text-center py-10 text-gray-400">No leads found.</td></tr>
               )}
               {(data?.data ?? []).map(lead => (
                 <tr key={lead.id} className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
@@ -99,7 +98,6 @@ export default function LeadsIndex() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{lead.source ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{lead.assigned_to?.name ?? '—'}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end">
                       <button onClick={() => navigate(`/leads/${lead.id}`)} className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"><Eye size={15} /></button>

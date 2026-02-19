@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { leadsApi } from '../../api/leads';
-import { ArrowLeft, Edit, Trash2, User, Mail, Phone, Building2, Tag, Clock } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Mail, Phone, Building2, Tag, Clock, User } from 'lucide-react';
 import { LEAD_STATUS_COLORS, formatRelativeTime } from '../../utils/helpers';
 import type { LeadHistory } from '../../types/lead';
 
@@ -86,7 +86,6 @@ export default function LeadShow() {
           <InfoRow icon={<Phone size={15} />} label="Phone" value={lead.phone ?? '—'} />
           <InfoRow icon={<Building2 size={15} />} label="Company" value={lead.company ?? '—'} />
           <InfoRow icon={<Tag size={15} />} label="Source" value={lead.source ?? '—'} />
-          <InfoRow icon={<User size={15} />} label="Assigned To" value={lead.assigned_to?.name ?? 'Unassigned'} />
           <InfoRow icon={<User size={15} />} label="Created By" value={lead.created_by?.name ?? '—'} />
           <InfoRow icon={<Clock size={15} />} label="Created" value={formatRelativeTime(lead.created_at)} />
           <InfoRow icon={<Clock size={15} />} label="Last Updated" value={formatRelativeTime(lead.updated_at)} />
