@@ -65,6 +65,14 @@ echo "==> Optimising..."
 php artisan config:cache
 php artisan route:cache
 
+# Ensure upload directories exist (store() will create subdirs but needs the disk root writable)
+mkdir -p storage/app/public/avatars \
+         storage/app/public/logos \
+         storage/app/public/temp
+
+# Re-create the public/storage symlink (survives across restarts, safe to re-run)
+php artisan storage:link --force 2>/dev/null || true
+
 # Fix storage permissions
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
