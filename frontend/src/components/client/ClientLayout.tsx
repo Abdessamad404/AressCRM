@@ -1,7 +1,8 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Briefcase, User, BookOpen, MessageCircle,
-  LogOut, Sun, Moon, Bell, ChevronDown, TrendingUp, PlusCircle
+  LogOut, Sun, Moon, Bell, ChevronDown, TrendingUp, PlusCircle,
+  ClipboardList, Rocket,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -72,6 +73,8 @@ export default function ClientLayout() {
               <div className="pt-3 pb-1 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Career</div>
               <NavItem to="/client/profile" icon={User} label="My Profile" end />
               <NavItem to="/client/job-offers" icon={Briefcase} label="Job Offers" end />
+              <NavItem to="/client/my-applications" icon={ClipboardList} label="My Applications" end />
+              <NavItem to="/client/missions" icon={Rocket} label="My Missions" end />
               <NavItem to="/client/quizzes" icon={BookOpen} label="My Quizzes" end />
             </>
           )}

@@ -32,7 +32,13 @@ class LeadController extends Controller
             $query->where('source', $source);
         }
 
-        $leads = $query->latest()->paginate($request->query('per_page', 15));
+        // Sorting
+        $allowed  = ['name', 'company', 'status', 'source', 'created_at'];
+        $sortBy   = in_array($request->query('sort_by'), $allowed) ? $request->query('sort_by') : 'created_at';
+        $sortDir  = $request->query('sort_dir') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sortBy, $sortDir);
+
+        $leads = $query->paginate($request->query('per_page', 15));
 
         return response()->json(LeadResource::collection($leads)->response()->getData(true));
     }

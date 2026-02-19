@@ -1,6 +1,7 @@
 import api from './axios';
 import type {
-  Profile, JobOffer, Quiz, QuizQuestion, QuizSubmission, QuizSubmissionResult, Message, Conversation, Paginated
+  Profile, JobOffer, Quiz, QuizQuestion, QuizSubmission, QuizSubmissionResult,
+  Message, Conversation, Application, Paginated
 } from '../types/client';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -65,6 +66,21 @@ export const jobOfferApi = {
   remove: async (id: string): Promise<void> => {
     await api.delete(`/api/client/job-offers/${id}`);
   },
+
+  // Multipart upload variants (for product sheet)
+  createMultipart: async (fd: globalThis.FormData): Promise<JobOffer> => {
+    const res = await api.post('/api/client/job-offers', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data;
+  },
+
+  updateMultipart: async (id: string, fd: globalThis.FormData): Promise<JobOffer> => {
+    const res = await api.post(`/api/client/job-offers/${id}`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data;
+  },
 };
 
 // ─── Quiz API ─────────────────────────────────────────────────────────────────
@@ -126,6 +142,30 @@ export const quizApi = {
   mySubmissions: async (): Promise<Paginated<QuizSubmission>> => {
     const res = await api.get('/api/client/my-submissions');
     return flatPage<QuizSubmission>(res.data);
+  },
+};
+
+// ─── Applications API ─────────────────────────────────────────────────────────
+
+export const applicationApi = {
+  apply: async (jobOfferId: string, coverLetter?: string): Promise<Application> => {
+    const res = await api.post(`/api/client/job-offers/${jobOfferId}/apply`, { cover_letter: coverLetter });
+    return res.data.data;
+  },
+
+  getForOffer: async (jobOfferId: string, params?: { status?: string; page?: number }): Promise<Paginated<Application>> => {
+    const res = await api.get(`/api/client/job-offers/${jobOfferId}/applications`, { params });
+    return flatPage<Application>(res.data);
+  },
+
+  updateStatus: async (jobOfferId: string, applicationId: string, data: { status?: string; entreprise_notes?: string }): Promise<Application> => {
+    const res = await api.patch(`/api/client/job-offers/${jobOfferId}/applications/${applicationId}`, data);
+    return res.data.data;
+  },
+
+  myApplications: async (params?: { status?: string; page?: number }): Promise<Paginated<Application>> => {
+    const res = await api.get('/api/client/my-applications', { params });
+    return flatPage<Application>(res.data);
   },
 };
 

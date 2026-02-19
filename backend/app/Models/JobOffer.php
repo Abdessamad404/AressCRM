@@ -18,18 +18,23 @@ class JobOffer extends Model
         'location',
         'sector',
         'mission_type',
+        'compensation_type',
         'commission_rate',
+        'budget_amount',
         'contract_duration',
         'requirements',
         'benefits',
         'status',
         'views_count',
+        'product_sheet_path',
+        'product_sheet_name',
     ];
 
     protected $casts = [
         'requirements'    => 'array',
         'benefits'        => 'array',
         'commission_rate' => 'decimal:2',
+        'budget_amount'   => 'decimal:2',
         'views_count'     => 'integer',
     ];
 
@@ -52,5 +57,10 @@ class JobOffer extends Model
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function applications()
+    {
+        return $this->hasMany(Application::class);
     }
 }

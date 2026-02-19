@@ -11,6 +11,7 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\JobOfferController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\MessageController;
 
 // Auth routes (guest)
@@ -74,7 +75,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/job-offers', [JobOfferController::class, 'store']);
         Route::get('/job-offers/{jobOffer}', [JobOfferController::class, 'show']);
         Route::put('/job-offers/{jobOffer}', [JobOfferController::class, 'update']);
+        Route::post('/job-offers/{jobOffer}', [JobOfferController::class, 'update']); // multipart _method override
         Route::delete('/job-offers/{jobOffer}', [JobOfferController::class, 'destroy']);
+
+        // Applications
+        Route::post('/job-offers/{jobOffer}/apply', [ApplicationController::class, 'apply']);
+        Route::get('/job-offers/{jobOffer}/applications', [ApplicationController::class, 'index']);
+        Route::patch('/job-offers/{jobOffer}/applications/{application}', [ApplicationController::class, 'update']);
+        Route::get('/my-applications', [ApplicationController::class, 'myApplications']);
 
         // Quizzes
         Route::get('/quizzes', [QuizController::class, 'index']);

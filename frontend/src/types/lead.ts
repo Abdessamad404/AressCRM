@@ -42,6 +42,8 @@ export interface LeadFilters {
   search?: string;
   status?: LeadStatus;
   source?: LeadSource;
+  sort_by?: 'name' | 'company' | 'status' | 'source' | 'created_at';
+  sort_dir?: 'asc' | 'desc';
   page?: number;
   per_page?: number;
 }

@@ -4,8 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { jobOfferApi } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  Briefcase, Plus, Search, MapPin, TrendingUp, Clock,
-  Eye, Pencil, Trash2, AlertCircle, ChevronRight
+  Briefcase, Plus, Search, MapPin, TrendingUp,
+  Eye, Pencil, Trash2, ChevronRight, CheckCircle, Users
 } from 'lucide-react';
 import type { JobOffer } from '../../types/client';
 
@@ -14,6 +14,13 @@ const MISSION_LABELS: Record<string, string> = {
   lead_gen: 'Lead Gen',
   demo: 'Demo',
   other: 'Other',
+};
+
+const APPLICATION_STATUS_STYLES: Record<string, string> = {
+  pending:     'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  shortlisted: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  accepted:    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  rejected:    'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
 };
 
 export default function JobOffersPage() {
@@ -130,9 +137,7 @@ export default function JobOffersPage() {
           >
             Previous
           </button>
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            Page {page} of {data?.last_page}
-          </span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">Page {page} of {data?.last_page}</span>
           <button
             onClick={() => setPage((p) => Math.min(data?.last_page ?? 1, p + 1))}
             disabled={page === data?.last_page}
@@ -147,8 +152,12 @@ export default function JobOffersPage() {
 }
 
 function JobOfferCard({ offer, isOwner, onDelete }: { offer: JobOffer; isOwner: boolean; onDelete: () => void }) {
+  const compensation = offer.compensation_type === 'fixed_budget'
+    ? offer.budget_amount != null ? `€${Number(offer.budget_amount).toLocaleString()} budget` : null
+    : offer.commission_rate != null ? `${offer.commission_rate}% commission` : null;
+
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow group">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
           <Link to={`/client/job-offers/${offer.id}`} className="font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
@@ -156,15 +165,24 @@ function JobOfferCard({ offer, isOwner, onDelete }: { offer: JobOffer; isOwner: 
           </Link>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{offer.company_name}</p>
         </div>
-        <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
-          offer.status === 'published'
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-            : offer.status === 'draft'
-            ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-            : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-        }`}>
-          {offer.status}
-        </span>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+            offer.status === 'published'
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+              : offer.status === 'draft'
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+              : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+          }`}>
+            {offer.status}
+          </span>
+          {/* Applied badge for commercial */}
+          {offer.has_applied && offer.application_status && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${APPLICATION_STATUS_STYLES[offer.application_status]}`}>
+              <CheckCircle size={10} />
+              {offer.application_status}
+            </span>
+          )}
+        </div>
       </div>
 
       <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">{offer.description}</p>
@@ -180,39 +198,38 @@ function JobOfferCard({ offer, isOwner, onDelete }: { offer: JobOffer; isOwner: 
             <TrendingUp size={11} /> {MISSION_LABELS[offer.mission_type] ?? offer.mission_type}
           </span>
         )}
-        {offer.commission_rate != null && (
+        {compensation && (
           <span className="text-xs px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium">
-            {offer.commission_rate}% commission
+            {compensation}
           </span>
         )}
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1 text-xs text-gray-400">
-          <Eye size={12} /> {offer.views_count} views
-        </span>
+        <div className="flex items-center gap-3 text-xs text-gray-400">
+          <span className="flex items-center gap-1"><Eye size={12} /> {offer.views_count}</span>
+          {isOwner && (
+            <Link
+              to={`/client/job-offers/${offer.id}/applications`}
+              className="flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            >
+              <Users size={12} /> Applications
+            </Link>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           {isOwner && (
             <>
-              <Link
-                to={`/client/job-offers/${offer.id}/edit`}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
-              >
+              <Link to={`/client/job-offers/${offer.id}/edit`} className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
                 <Pencil size={14} />
               </Link>
-              <button
-                onClick={onDelete}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-              >
+              <button onClick={onDelete} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
                 <Trash2 size={14} />
               </button>
             </>
           )}
-          <Link
-            to={`/client/job-offers/${offer.id}`}
-            className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
-          >
+          <Link to={`/client/job-offers/${offer.id}`} className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline">
             View <ChevronRight size={13} />
           </Link>
         </div>

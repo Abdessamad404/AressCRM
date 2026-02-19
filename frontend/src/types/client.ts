@@ -30,16 +30,37 @@ export interface JobOffer {
   location: string | null;
   sector: string | null;
   mission_type: 'direct_sales' | 'lead_gen' | 'demo' | 'other' | null;
+  compensation_type: 'commission' | 'fixed_budget';
   commission_rate: number | null;
+  budget_amount: number | null;
   contract_duration: string | null;
   requirements: string[];
   benefits: string[];
   status: 'draft' | 'published' | 'closed';
   views_count: number;
+  product_sheet_path: string | null;
+  product_sheet_name: string | null;
+  // computed by backend for commercial users
+  has_applied?: boolean;
+  application_status?: 'pending' | 'shortlisted' | 'rejected' | 'accepted' | null;
   created_at: string;
   updated_at: string;
   user?: { id: string; name: string; email: string };
   quizzes?: { id: string; title: string; description: string | null; time_limit_minutes: number | null }[];
+}
+
+// ─── Application ──────────────────────────────────────────────────────────────
+export interface Application {
+  id: string;
+  job_offer_id: string;
+  user_id: string;
+  cover_letter: string | null;
+  status: 'pending' | 'shortlisted' | 'rejected' | 'accepted';
+  entreprise_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  job_offer?: JobOffer;
+  user?: { id: string; name: string; email: string };
 }
 
 // ─── Quiz ─────────────────────────────────────────────────────────────────────

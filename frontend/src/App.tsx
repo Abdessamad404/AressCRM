@@ -20,6 +20,9 @@ import ActivityIndex from './pages/Activity/Index';
 import ClientDashboard from './pages/Client/Dashboard';
 import JobOffersPage from './pages/Client/JobOffers';
 import JobOfferForm from './pages/Client/JobOfferForm';
+import JobOfferDetail from './pages/Client/JobOfferDetail';
+import MyApplications from './pages/Client/MyApplications';
+import Missions from './pages/Client/Missions';
 import CommercialProfile from './pages/Client/Profile';
 import QuizzesPage from './pages/Client/Quizzes';
 import QuizForm from './pages/Client/QuizForm';
@@ -101,7 +104,12 @@ export default function App() {
         {/* Job Offers */}
         <Route path="/client/job-offers"          element={<JobOffersPage />} />
         <Route path="/client/job-offers/create"   element={<JobOfferForm />} />
+        <Route path="/client/job-offers/:id"      element={<JobOfferDetail />} />
         <Route path="/client/job-offers/:id/edit" element={<JobOfferForm />} />
+
+        {/* Applications & Missions (commercial) */}
+        <Route path="/client/my-applications" element={<MyApplications />} />
+        <Route path="/client/missions"         element={<Missions />} />
 
         {/* Commercial profile */}
         <Route path="/client/profile" element={<CommercialProfile />} />

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Application;
 use App\Models\JobOffer;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 
 class JobOfferController extends Controller
 {
@@ -40,7 +42,19 @@ class JobOfferController extends Controller
             });
         }
 
+        // Attach has_applied flag for commercial users
         $offers = $query->orderByDesc('created_at')->paginate(12);
+
+        if ($user->isCommercial()) {
+            $appliedIds = Application::where('user_id', $user->id)
+                ->pluck('job_offer_id')
+                ->flip();
+
+            $offers->getCollection()->transform(function ($offer) use ($appliedIds) {
+                $offer->has_applied = $appliedIds->has($offer->id);
+                return $offer;
+            });
+        }
 
         return response()->json($offers);
     }
@@ -65,12 +79,21 @@ class JobOfferController extends Controller
             $q->where('is_published', true)->select('id', 'title', 'description', 'time_limit_minutes');
         }]);
 
+        // Attach has_applied + application_status for commercial users
+        if ($user->isCommercial()) {
+            $application = Application::where('job_offer_id', $jobOffer->id)
+                ->where('user_id', $user->id)
+                ->first();
+            $jobOffer->has_applied        = (bool) $application;
+            $jobOffer->application_status = $application?->status;
+        }
+
         return response()->json(['data' => $jobOffer]);
     }
 
     /**
      * POST /api/client/job-offers
-     * Create a new job offer (entreprise only)
+     * Create a new job offer (entreprise only) — multipart/form-data for product sheet
      */
     public function store(Request $request): JsonResponse
     {
@@ -87,25 +110,41 @@ class JobOfferController extends Controller
             'location'          => 'nullable|string|max:255',
             'sector'            => 'nullable|string|max:100',
             'mission_type'      => 'nullable|string|in:direct_sales,lead_gen,demo,other',
+            'compensation_type' => 'nullable|in:commission,fixed_budget',
             'commission_rate'   => 'nullable|numeric|min:0|max:100',
+            'budget_amount'     => 'nullable|numeric|min:0',
             'contract_duration' => 'nullable|string|max:50',
             'requirements'      => 'nullable|array',
             'requirements.*'    => 'string',
             'benefits'          => 'nullable|array',
             'benefits.*'        => 'string',
             'status'            => 'nullable|in:draft,published,closed',
+            'product_sheet'     => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
         ]);
 
-        $offer = JobOffer::create(array_merge($validated, [
-            'user_id' => $user->id,
-            'status'  => $validated['status'] ?? 'draft',
-        ]));
+        $data = array_merge($validated, [
+            'user_id'           => $user->id,
+            'status'            => $validated['status'] ?? 'draft',
+            'compensation_type' => $validated['compensation_type'] ?? 'commission',
+        ]);
+
+        // Handle product sheet upload
+        if ($request->hasFile('product_sheet')) {
+            $file = $request->file('product_sheet');
+            $path = $file->store('product_sheets', 'public');
+            $data['product_sheet_path'] = $path;
+            $data['product_sheet_name'] = $file->getClientOriginalName();
+        }
+
+        unset($data['product_sheet']);
+
+        $offer = JobOffer::create($data);
 
         return response()->json(['data' => $offer], 201);
     }
 
     /**
-     * PUT /api/client/job-offers/{jobOffer}
+     * POST /api/client/job-offers/{jobOffer} (with _method=PUT for multipart)
      * Update a job offer (owner entreprise only)
      */
     public function update(Request $request, JobOffer $jobOffer): JsonResponse
@@ -123,16 +162,32 @@ class JobOfferController extends Controller
             'location'          => 'nullable|string|max:255',
             'sector'            => 'nullable|string|max:100',
             'mission_type'      => 'nullable|string|in:direct_sales,lead_gen,demo,other',
+            'compensation_type' => 'nullable|in:commission,fixed_budget',
             'commission_rate'   => 'nullable|numeric|min:0|max:100',
+            'budget_amount'     => 'nullable|numeric|min:0',
             'contract_duration' => 'nullable|string|max:50',
             'requirements'      => 'nullable|array',
             'requirements.*'    => 'string',
             'benefits'          => 'nullable|array',
             'benefits.*'        => 'string',
             'status'            => 'nullable|in:draft,published,closed',
+            'product_sheet'     => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
         ]);
 
-        $jobOffer->update($validated);
+        $data = $validated;
+
+        if ($request->hasFile('product_sheet')) {
+            // Delete old file if exists
+            if ($jobOffer->product_sheet_path) {
+                Storage::disk('public')->delete($jobOffer->product_sheet_path);
+            }
+            $file = $request->file('product_sheet');
+            $data['product_sheet_path'] = $file->store('product_sheets', 'public');
+            $data['product_sheet_name'] = $file->getClientOriginalName();
+        }
+
+        unset($data['product_sheet']);
+        $jobOffer->update($data);
 
         return response()->json(['data' => $jobOffer]);
     }
@@ -145,6 +200,11 @@ class JobOfferController extends Controller
     {
         if ($jobOffer->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        // Clean up product sheet
+        if ($jobOffer->product_sheet_path) {
+            Storage::disk('public')->delete($jobOffer->product_sheet_path);
         }
 
         $jobOffer->delete();
