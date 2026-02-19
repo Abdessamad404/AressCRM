@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bug;
-use App\Models\JobOffer;
-use App\Models\Lead;
-use App\Models\LeadHistory;
 use App\Models\BugHistory;
+use App\Models\JobOffer;
 use App\Models\Message;
 use App\Models\QuizSubmission;
 use App\Models\User;
@@ -20,18 +18,45 @@ class DashboardController extends Controller
         $isAdmin = $request->user()->role === 'admin';
         $userId  = $request->user()->id;
 
-        $leadQuery = $isAdmin ? Lead::query() : Lead::where('assigned_to_id', $userId);
-        $bugQuery  = $isAdmin ? Bug::query()  : Bug::where(fn($q) => $q->where('assigned_to_id', $userId)->orWhere('reported_by_id', $userId));
+        // Leads = client users (commercial + entreprise)
+        $leadQuery = User::whereIn('client_type', ['commercial', 'entreprise']);
 
-        $totalLeads     = (clone $leadQuery)->count();
-        $leadsByStatus  = (clone $leadQuery)->selectRaw('status, count(*) as count')->groupBy('status')->pluck('count', 'status');
+        $totalLeads    = (clone $leadQuery)->count();
+        $leadsByStatus = (clone $leadQuery)
+            ->selectRaw('lead_status as status, count(*) as count')
+            ->groupBy('lead_status')
+            ->pluck('count', 'status');
+
         $wonLeads       = $leadsByStatus['Won'] ?? 0;
         $conversionRate = $totalLeads > 0 ? round(($wonLeads / $totalLeads) * 100, 1) : 0;
 
-        $totalBugs    = (clone $bugQuery)->count();
-        $bugsByStatus = (clone $bugQuery)->selectRaw('status, count(*) as count')->groupBy('status')->pluck('count', 'status');
+        // Month-over-month trend for leads
+        $thisMonth      = now()->startOfMonth();
+        $lastMonth      = now()->subMonth()->startOfMonth();
+        $leadsThisMonth = (clone $leadQuery)->where('created_at', '>=', $thisMonth)->count();
+        $leadsLastMonth = (clone $leadQuery)->whereBetween('created_at', [$lastMonth, $thisMonth])->count();
+        $leadsTrend     = $leadsLastMonth > 0
+            ? round((($leadsThisMonth - $leadsLastMonth) / $leadsLastMonth) * 100, 1)
+            : null;
 
-        // ── Client platform stats (admin-only) ────────────────────────────────
+        // Bugs
+        $bugQuery = $isAdmin
+            ? Bug::query()
+            : Bug::where(fn($q) => $q->where('assigned_to_id', $userId)->orWhere('reported_by_id', $userId));
+
+        $totalBugs    = (clone $bugQuery)->count();
+        $bugsByStatus = (clone $bugQuery)
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $bugsThisMonth = (clone $bugQuery)->where('created_at', '>=', $thisMonth)->count();
+        $bugsLastMonth = (clone $bugQuery)->whereBetween('created_at', [$lastMonth, $thisMonth])->count();
+        $bugsTrend     = $bugsLastMonth > 0
+            ? round((($bugsThisMonth - $bugsLastMonth) / $bugsLastMonth) * 100, 1)
+            : null;
+
+        // Client platform stats (admin only)
         $clientStats = null;
         if ($isAdmin) {
             $clientStats = [
@@ -44,20 +69,11 @@ class DashboardController extends Controller
             ];
         }
 
-        // Recent activity: last 10 lead + bug history entries
-        $leadActivity = LeadHistory::with(['user', 'lead'])
-            ->latest('created_at')->limit(5)->get()
-            ->map(fn($h) => [
-                'id'         => $h->id,
-                'type'       => 'lead',
-                'action'     => $h->action,
-                'subject'    => $h->lead?->name ?? 'Deleted Lead',
-                'user'       => $h->user?->name ?? 'System',
-                'created_at' => $h->created_at,
-            ]);
-
-        $bugActivity = BugHistory::with(['user', 'bug'])
-            ->latest('created_at')->limit(5)->get()
+        // Recent activity from bug history
+        $recentActivity = BugHistory::with(['user', 'bug'])
+            ->latest('created_at')
+            ->limit(10)
+            ->get()
             ->map(fn($h) => [
                 'id'         => $h->id,
                 'type'       => 'bug',
@@ -65,19 +81,17 @@ class DashboardController extends Controller
                 'subject'    => $h->bug?->title ?? 'Deleted Bug',
                 'user'       => $h->user?->name ?? 'System',
                 'created_at' => $h->created_at,
-            ]);
-
-        $recentActivity = $leadActivity->concat($bugActivity)
-            ->sortByDesc('created_at')
-            ->values()
-            ->take(10);
+            ])
+            ->values();
 
         return response()->json(['data' => [
             'total_leads'     => $totalLeads,
             'leads_by_status' => $leadsByStatus,
             'conversion_rate' => $conversionRate,
+            'leads_trend'     => $leadsTrend,
             'total_bugs'      => $totalBugs,
             'bugs_by_status'  => $bugsByStatus,
+            'bugs_trend'      => $bugsTrend,
             'client_stats'    => $clientStats,
             'recent_activity' => $recentActivity,
         ]]);

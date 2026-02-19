@@ -39,10 +39,10 @@ export default function Dashboard() {
 
       {/* CRM Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Leads"     value={stats?.total_leads ?? 0}      icon={<Users size={20} />}    color="bg-indigo-500" trend="+12%" up />
-        <StatCard label="Conversion Rate" value={`${stats?.conversion_rate ?? 0}%`} icon={<TrendingUp size={20} />} color="bg-emerald-500" trend="+3.1%" up />
-        <StatCard label="Total Bugs"      value={stats?.total_bugs ?? 0}       icon={<Bug size={20} />}      color="bg-rose-500"   trend="-2"   up={false} />
-        <StatCard label="Open Bugs"       value={stats?.bugs_by_status?.['open'] ?? 0} icon={<Activity size={20} />} color="bg-amber-500" trend="" up />
+        <StatCard label="Total Leads"     value={stats?.total_leads ?? 0}                        icon={<Users size={20} />}      color="bg-indigo-500"  trend={stats?.leads_trend ?? null} />
+        <StatCard label="Conversion Rate" value={`${stats?.conversion_rate ?? 0}%`}             icon={<TrendingUp size={20} />} color="bg-emerald-500" trend={null} />
+        <StatCard label="Total Bugs"      value={stats?.total_bugs ?? 0}                        icon={<Bug size={20} />}        color="bg-rose-500"    trend={stats?.bugs_trend != null ? -stats.bugs_trend : null} />
+        <StatCard label="Open Bugs"       value={stats?.bugs_by_status?.['open'] ?? 0}          icon={<Activity size={20} />}   color="bg-amber-500"   trend={null} />
       </div>
 
       {/* Client Platform Stats (admin only) */}
@@ -127,18 +127,20 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value, icon, color, trend, up }: {
-  label: string; value: string | number; icon: React.ReactNode; color: string; trend: string; up: boolean;
+function StatCard({ label, value, icon, color, trend }: {
+  label: string; value: string | number; icon: React.ReactNode; color: string; trend: number | null;
 }) {
+  const up = (trend ?? 0) >= 0;
   return (
     <div className="card flex items-start gap-4">
       <div className={`${color} text-white p-2.5 rounded-xl flex-shrink-0`}>{icon}</div>
       <div>
         <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
         <p className="text-2xl font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
-        {trend && (
+        {trend != null && (
           <p className={`text-xs flex items-center gap-0.5 mt-1 ${up ? 'text-emerald-600' : 'text-rose-500'}`}>
-            {up ? <ArrowUp size={12} /> : <ArrowDown size={12} />}{trend} this month
+            {up ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+            {up ? '+' : ''}{trend}% this month
           </p>
         )}
       </div>
