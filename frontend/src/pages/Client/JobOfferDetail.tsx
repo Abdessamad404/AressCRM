@@ -5,8 +5,8 @@ import { jobOfferApi, applicationApi } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   ArrowLeft, MapPin, TrendingUp, Clock, Eye, FileText,
-  CheckCircle, XCircle, Loader2, Users, Pencil, Download,
-  BookOpen, Send
+  CheckCircle, Loader2, Users, Pencil, Download,
+  BookOpen, Send, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { formatRelativeTime } from '../../utils/helpers';
 import type { Application } from '../../types/client';
@@ -20,6 +20,9 @@ const STATUS_STYLES: Record<string, string> = {
   accepted:    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   rejected:    'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
 };
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending', shortlisted: 'Shortlisted', accepted: 'Accepted', rejected: 'Rejected',
+};
 
 export default function JobOfferDetail() {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +34,7 @@ export default function JobOfferDetail() {
 
   const [tab, setTab] = useState<'details' | 'applications'>('details');
   const [coverLetter, setCoverLetter] = useState('');
-  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showCoverLetter, setShowCoverLetter] = useState(false);
 
   const { data: offer, isLoading } = useQuery({
     queryKey: ['client-job-offer-detail', id],
@@ -39,19 +42,23 @@ export default function JobOfferDetail() {
     enabled: !!id,
   });
 
+  // Always fetch applications for entreprise so we can show pending badge on tab
   const { data: applicationsData, isLoading: appsLoading } = useQuery({
     queryKey: ['job-offer-applications', id],
     queryFn: () => applicationApi.getForOffer(id!),
-    enabled: !!id && isEntreprise && tab === 'applications',
+    enabled: !!id && isEntreprise,
   });
+
+  const pendingCount = (applicationsData?.data ?? []).filter(a => a.status === 'pending').length;
 
   const applyMutation = useMutation({
     mutationFn: () => applicationApi.apply(id!, coverLetter || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-job-offer-detail', id] });
       queryClient.invalidateQueries({ queryKey: ['client-job-offers'] });
-      setShowApplyModal(false);
+      queryClient.invalidateQueries({ queryKey: ['my-applications'] });
       setCoverLetter('');
+      setShowCoverLetter(false);
     },
   });
 
@@ -84,7 +91,7 @@ export default function JobOfferDetail() {
         <ArrowLeft size={16} /> Back
       </button>
 
-      {/* Header */}
+      {/* Header card */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 mb-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -149,29 +156,57 @@ export default function JobOfferDetail() {
           </a>
         )}
 
-        {/* Apply / application status */}
+        {/* ── Apply section (commercial) ── */}
         {isCommercial && (
           <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800">
             {offer.has_applied && offer.application_status ? (
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium ${STATUS_STYLES[offer.application_status]}`}>
-                  <CheckCircle size={14} />
-                  Application {offer.application_status}
-                </span>
-              </div>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium ${STATUS_STYLES[offer.application_status]}`}>
+                <CheckCircle size={14} />
+                Application {STATUS_LABELS[offer.application_status]}
+              </span>
             ) : offer.status === 'published' ? (
-              <button
-                onClick={() => setShowApplyModal(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl transition-colors"
-              >
-                <Send size={15} /> Apply Now
-              </button>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => applyMutation.mutate()}
+                    disabled={applyMutation.isPending}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors"
+                  >
+                    {applyMutation.isPending
+                      ? <><Loader2 size={15} className="animate-spin" /> Applying...</>
+                      : <><Send size={15} /> Apply Now</>}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCoverLetter((v) => !v)}
+                    className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  >
+                    {showCoverLetter ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                    {showCoverLetter ? 'Hide note' : '+ Add a note'}
+                  </button>
+                </div>
+
+                {showCoverLetter && (
+                  <textarea
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                    rows={4}
+                    autoFocus
+                    placeholder="Introduce yourself and explain why you're a great fit for this mission..."
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 resize-none"
+                  />
+                )}
+
+                {applyMutation.isError && (
+                  <p className="text-xs text-red-600 dark:text-red-400">Failed to apply. You may have already applied.</p>
+                )}
+              </div>
             ) : null}
           </div>
         )}
       </div>
 
-      {/* Tabs (entreprise: details + applications) */}
+      {/* Tabs — entreprise: Details + Applications with pending badge */}
       {isEntreprise && (
         <div className="flex gap-1 mb-5">
           {(['details', 'applications'] as const).map((t) => (
@@ -183,7 +218,14 @@ export default function JobOfferDetail() {
               }`}
             >
               {t === 'applications' ? (
-                <span className="flex items-center gap-1.5"><Users size={14} /> Applications</span>
+                <span className="flex items-center gap-1.5">
+                  <Users size={14} /> Applications
+                  {pendingCount > 0 && (
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-white text-[10px] font-bold">
+                      {pendingCount}
+                    </span>
+                  )}
+                </span>
               ) : t}
             </button>
           ))}
@@ -224,28 +266,31 @@ export default function JobOfferDetail() {
             </div>
           )}
 
-          {/* Quizzes section */}
+          {/* Required Assessments */}
           {(offer.quizzes ?? []).length > 0 && (
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
-              <h2 className="font-semibold text-gray-900 dark:text-white text-sm mb-3 flex items-center gap-2">
-                <BookOpen size={14} className="text-primary-500" /> Assessment Quizzes
+              <h2 className="font-semibold text-gray-900 dark:text-white text-sm mb-4 flex items-center gap-2">
+                <BookOpen size={14} className="text-primary-500" /> Required Assessments
               </h2>
               <div className="space-y-2">
                 {(offer.quizzes ?? []).map((q) => (
-                  <div key={q.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-gray-800">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{q.title}</p>
-                      {q.description && <p className="text-xs text-gray-400 mt-0.5">{q.description}</p>}
+                  <div key={q.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{q.title}</p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        {q.description && <p className="text-xs text-gray-400 truncate max-w-[200px]">{q.description}</p>}
+                        {q.time_limit_minutes && (
+                          <span className="text-xs text-gray-400 flex items-center gap-1 shrink-0">
+                            <Clock size={10} /> {q.time_limit_minutes} min
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {q.time_limit_minutes && (
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <Clock size={11} /> {q.time_limit_minutes}min
-                      </span>
-                    )}
                     {isCommercial && (
                       <Link
                         to={`/client/quizzes/${q.id}`}
-                        className="ml-3 text-xs px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+                        state={{ fromOfferId: offer.id, fromOfferTitle: offer.title }}
+                        className="ml-4 shrink-0 text-xs px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
                       >
                         Take Quiz
                       </Link>
@@ -262,7 +307,9 @@ export default function JobOfferDetail() {
       {tab === 'applications' && isEntreprise && (
         <div>
           {appsLoading ? (
-            <div className="flex justify-center py-12"><div className="w-7 h-7 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>
+            <div className="flex justify-center py-12">
+              <div className="w-7 h-7 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+            </div>
           ) : (applicationsData?.data.length ?? 0) === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Users size={36} className="mx-auto mb-3 opacity-40" />
@@ -280,48 +327,6 @@ export default function JobOfferDetail() {
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Apply modal */}
-      {showApplyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 w-full max-w-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Apply to {offer.title}</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{offer.company_name}</p>
-
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
-              Cover Letter <span className="text-gray-400">(optional)</span>
-            </label>
-            <textarea
-              value={coverLetter}
-              onChange={(e) => setCoverLetter(e.target.value)}
-              rows={5}
-              placeholder="Introduce yourself and explain why you're a great fit for this mission..."
-              className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 resize-none"
-            />
-
-            {applyMutation.isError && (
-              <p className="mt-2 text-xs text-red-600 dark:text-red-400">Failed to submit. You may have already applied.</p>
-            )}
-
-            <div className="flex gap-3 mt-4">
-              <button
-                type="button"
-                onClick={() => { setShowApplyModal(false); setCoverLetter(''); }}
-                className="flex-1 px-4 py-2.5 text-sm font-medium border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => applyMutation.mutate()}
-                disabled={applyMutation.isPending}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors"
-              >
-                {applyMutation.isPending ? <><Loader2 size={15} className="animate-spin" /> Submitting...</> : <><Send size={15} /> Submit Application</>}
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>
@@ -344,37 +349,31 @@ function ApplicationRow({ application, onStatusChange, isUpdating }: {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <p className="font-medium text-gray-900 dark:text-white text-sm">{application.user?.name ?? '—'}</p>
-            <span className="text-xs text-gray-400">{formatRelativeTime(application.created_at)}</span>
+            <span className="text-xs text-gray-400 shrink-0">{formatRelativeTime(application.created_at)}</span>
           </div>
           <p className="text-xs text-gray-400">{application.user?.email}</p>
           {application.cover_letter && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">{application.cover_letter}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2 italic">"{application.cover_letter}"</p>
           )}
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLES[application.status]}`}>
-          {application.status}
+      {/* Status badge + dropdown */}
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 gap-3">
+        <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_STYLES[application.status]}`}>
+          {STATUS_LABELS[application.status]}
         </span>
-        <div className="flex gap-1">
-          {(['pending', 'shortlisted', 'accepted', 'rejected'] as const).filter(s => s !== application.status).map((s) => (
-            <button
-              key={s}
-              disabled={isUpdating}
-              onClick={() => onStatusChange(s)}
-              className={`text-xs px-2.5 py-1 rounded-lg border transition-colors disabled:opacity-50 ${
-                s === 'accepted' ? 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20'
-                : s === 'rejected' ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20'
-                : s === 'shortlisted' ? 'border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/20'
-                : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800'
-              }`}
-            >
-              {s === 'accepted' ? <CheckCircle size={11} className="inline mr-0.5" /> : s === 'rejected' ? <XCircle size={11} className="inline mr-0.5" /> : null}
-              {s}
-            </button>
-          ))}
-        </div>
+        <select
+          value={application.status}
+          disabled={isUpdating}
+          onChange={(e) => onStatusChange(e.target.value)}
+          className="text-xs border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 disabled:opacity-50 cursor-pointer"
+        >
+          <option value="pending">→ Pending</option>
+          <option value="shortlisted">→ Shortlist</option>
+          <option value="accepted">→ Accept</option>
+          <option value="rejected">→ Reject</option>
+        </select>
       </div>
     </div>
   );
