@@ -1,13 +1,30 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import api from '../../api/axios';
-import { Search, Shield, User, ChevronDown } from 'lucide-react';
+import { Search, Shield, User, Briefcase, TrendingUp, ChevronDown, BarChart2 } from 'lucide-react';
 import { formatRelativeTime } from '../../utils/helpers';
+import { useAuth } from '../../contexts/AuthContext';
 import type { User as UserType } from '../../types/auth';
+
+function roleBadge(user: UserType) {
+  if (user.role === 'admin') {
+    return { label: 'Admin', icon: <Shield size={10} />, cls: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' };
+  }
+  if (user.client_type === 'entreprise') {
+    return { label: 'Entreprise', icon: <Briefcase size={10} />, cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400' };
+  }
+  if (user.client_type === 'commercial') {
+    return { label: 'Commercial', icon: <TrendingUp size={10} />, cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' };
+  }
+  return { label: 'Agent', icon: <User size={10} />, cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' };
+}
 
 export default function UsersIndex() {
   const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'admin' | 'agent' | 'entreprise' | 'commercial'>('all');
   const queryClient = useQueryClient();
+  const { user: me } = useAuth();
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['users'],
@@ -23,28 +40,40 @@ export default function UsersIndex() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
 
-  const filtered = (users ?? []).filter(u =>
-    !search ||
-    u.name.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const adminCount      = (users ?? []).filter(u => u.role === 'admin').length;
+  const agentCount      = (users ?? []).filter(u => u.role === 'user' && !u.client_type).length;
+  const entrepriseCount = (users ?? []).filter(u => u.client_type === 'entreprise').length;
+  const commercialCount = (users ?? []).filter(u => u.client_type === 'commercial').length;
 
-  const adminCount = filtered.filter(u => u.role === 'admin').length;
-  const userCount = filtered.filter(u => u.role === 'user').length;
+  const filtered = (users ?? []).filter(u => {
+    const matchSearch = !search ||
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase());
+    const matchFilter =
+      filter === 'all'        ? true :
+      filter === 'admin'      ? u.role === 'admin' :
+      filter === 'agent'      ? (u.role === 'user' && !u.client_type) :
+      filter === 'entreprise' ? u.client_type === 'entreprise' :
+      filter === 'commercial' ? u.client_type === 'commercial' : true;
+    return matchSearch && matchFilter;
+  });
+
+  const isOnlyAdmin = adminCount <= 1;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Team Members</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Team & Clients</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {adminCount} admin{adminCount !== 1 ? 's' : ''} · {userCount} user{userCount !== 1 ? 's' : ''}
+            {adminCount} admin · {agentCount} agent{agentCount !== 1 ? 's' : ''} · {entrepriseCount} entreprise · {commercialCount} commercial
           </p>
         </div>
       </div>
 
-      <div className="card py-3">
-        <div className="relative max-w-sm">
+      {/* Filters */}
+      <div className="card py-3 flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-48">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
@@ -52,6 +81,21 @@ export default function UsersIndex() {
             placeholder="Search by name or email..."
             className="input pl-9 py-2"
           />
+        </div>
+        <div className="flex gap-1 flex-wrap">
+          {(['all', 'admin', 'agent', 'entreprise', 'commercial'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize ${
+                filter === f
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              {f === 'all' ? 'All' : f}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -72,7 +116,7 @@ export default function UsersIndex() {
                 <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Email</th>
                 <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Role</th>
                 <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Joined</th>
-                <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-right">Change Role</th>
+                <th className="px-4 py-3 font-medium text-gray-500 dark:text-gray-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -80,6 +124,8 @@ export default function UsersIndex() {
                 <UserRow
                   key={user.id}
                   user={user}
+                  isSelf={user.id === me?.id}
+                  isOnlyAdmin={isOnlyAdmin}
                   onRoleChange={(role) => updateRoleMutation.mutate({ id: user.id, role })}
                   isUpdating={updateRoleMutation.isPending}
                 />
@@ -92,56 +138,89 @@ export default function UsersIndex() {
   );
 }
 
-function UserRow({ user, onRoleChange, isUpdating }: {
+function UserRow({
+  user,
+  isSelf,
+  isOnlyAdmin,
+  onRoleChange,
+  isUpdating,
+}: {
   user: UserType;
+  isSelf: boolean;
+  isOnlyAdmin: boolean;
   onRoleChange: (role: string) => void;
   isUpdating: boolean;
 }) {
-  const isAdmin = user.role === 'admin';
+  const badge    = roleBadge(user);
   const initials = user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const isClient = !!user.client_type;
+  const isAdmin  = user.role === 'admin';
 
-  const handleRoleToggle = () => {
+  // Clients can't be promoted/demoted, self can't be changed, last admin can't be demoted
+  const canToggle = !isClient && !isSelf && !(isAdmin && isOnlyAdmin);
+
+  const handleToggle = () => {
+    if (!canToggle) return;
     const newRole = isAdmin ? 'user' : 'admin';
-    if (window.confirm(`Change ${user.name} to ${newRole}?`)) {
+    const label   = isAdmin ? 'Demote to Agent' : 'Promote to Admin';
+    if (window.confirm(`${label}: ${user.name}?`)) {
       onRoleChange(newRole);
     }
   };
+
+  const avatarColor =
+    isAdmin                          ? 'bg-indigo-500'  :
+    user.client_type === 'entreprise'? 'bg-violet-500'  :
+    user.client_type === 'commercial'? 'bg-emerald-500' :
+    'bg-gray-400 dark:bg-gray-600';
 
   return (
     <tr className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${isAdmin ? 'bg-indigo-500' : 'bg-gray-400 dark:bg-gray-600'}`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${avatarColor}`}>
             {initials}
           </div>
-          <span className="font-medium text-gray-900 dark:text-white">{user.name}</span>
+          <span className="font-medium text-gray-900 dark:text-white">
+            {user.name}
+            {isSelf && <span className="ml-1.5 text-xs text-gray-400">(you)</span>}
+          </span>
         </div>
       </td>
       <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{user.email}</td>
       <td className="px-4 py-3">
-        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          isAdmin
-            ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-        }`}>
-          {isAdmin ? <Shield size={10} /> : <User size={10} />}
-          {user.role}
+        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.cls}`}>
+          {badge.icon}
+          {badge.label}
         </span>
       </td>
       <td className="px-4 py-3 text-gray-400 text-xs">{formatRelativeTime(user.created_at ?? '')}</td>
       <td className="px-4 py-3 text-right">
-        <button
-          onClick={handleRoleToggle}
-          disabled={isUpdating}
-          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${
-            isAdmin
-              ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40'
-          }`}
-        >
-          <ChevronDown size={12} />
-          {isAdmin ? 'Demote to User' : 'Promote to Admin'}
-        </button>
+        {isClient ? (
+          <Link
+            to={`/users/${user.id}/progress`}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            <BarChart2 size={12} /> View Progress
+          </Link>
+        ) : isSelf ? (
+          <span className="text-xs text-gray-400 italic">—</span>
+        ) : (isAdmin && isOnlyAdmin) ? (
+          <span className="text-xs text-amber-500 italic">Only admin</span>
+        ) : (
+          <button
+            onClick={handleToggle}
+            disabled={isUpdating}
+            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${
+              isAdmin
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40'
+            }`}
+          >
+            <ChevronDown size={12} />
+            {isAdmin ? 'Demote to Agent' : 'Promote to Admin'}
+          </button>
+        )}
       </td>
     </tr>
   );

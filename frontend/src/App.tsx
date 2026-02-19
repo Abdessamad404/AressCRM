@@ -13,6 +13,7 @@ import LeadKanban from './pages/Leads/Kanban';
 import BugsIndex from './pages/Bugs/Index';
 import BugShow from './pages/Bugs/Show';
 import UsersIndex from './pages/Users/Index';
+import ClientProgress from './pages/Admin/ClientProgress';
 
 // Client pages
 import ClientDashboard from './pages/Client/Dashboard';
@@ -87,6 +88,7 @@ export default function App() {
         <Route path="/bugs/:id" element={<BugShow />} />
 
         <Route path="/users" element={<AdminRoute><UsersIndex /></AdminRoute>} />
+        <Route path="/users/:id/progress" element={<AdminRoute><ClientProgress /></AdminRoute>} />
       </Route>
 
       {/* Client layout (commercial + entreprise) */}

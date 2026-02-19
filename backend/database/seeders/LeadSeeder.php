@@ -13,7 +13,8 @@ class LeadSeeder extends Seeder
     {
         $users  = User::all();
         $admin  = $users->firstWhere('role', 'admin');
-        $agents = $users->where('role', 'user')->values();
+        // Internal CRM agents only (role=user, no client_type)
+        $agents = $users->filter(fn($u) => $u->role === 'user' && $u->client_type === null)->values();
 
         $statuses = ['New', 'Contacted', 'Interested', 'Negotiation', 'Won', 'Lost'];
         $sources  = ['LinkedIn', 'Referral', 'Cold call', 'Website', 'Other'];

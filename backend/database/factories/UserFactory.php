@@ -11,33 +11,53 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'name'             => fake()->name(),
+            'email'            => fake()->unique()->safeEmail(),
+            'email_verified_at'=> now(),
+            'password'         => static::$password ??= Hash::make('password'),
+            'remember_token'   => Str::random(10),
+            'role'             => 'user',
+            'client_type'      => null,
+            'theme_preference' => 'system',
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
+    /** Internal CRM agent (no client_type) */
+    public function agent(): static
+    {
+        return $this->state(fn () => [
+            'role'        => 'user',
+            'client_type' => null,
+        ]);
+    }
+
+    /** Entreprise (hiring company) client */
+    public function entreprise(): static
+    {
+        return $this->state(fn () => [
+            'role'        => 'user',
+            'client_type' => 'entreprise',
+        ]);
+    }
+
+    /** Commercial / salesperson / candidate client */
+    public function commercial(): static
+    {
+        return $this->state(fn () => [
+            'role'        => 'user',
+            'client_type' => 'commercial',
+        ]);
+    }
+
+    /** Unverified email */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn () => [
             'email_verified_at' => null,
         ]);
     }

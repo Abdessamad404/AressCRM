@@ -1,12 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { dashboardApi } from '../api/dashboard';
-import { Users, Bug, TrendingUp, Activity, ArrowUp, ArrowDown } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Users, Bug, TrendingUp, Activity, ArrowUp, ArrowDown, Briefcase, FileText, MessageSquare, Building2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { formatRelativeTime, LEAD_STATUS_COLORS } from '../utils/helpers';
 
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444'];
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: dashboardApi.getStats,
@@ -22,7 +27,8 @@ export default function Dashboard() {
   }
 
   const leadStatusData = Object.entries(stats?.leads_by_status ?? {}).map(([name, value]) => ({ name, value: value as number }));
-  const bugStatusData = Object.entries(stats?.bugs_by_status ?? {}).map(([name, value]) => ({ name, value: value as number }));
+  const bugStatusData  = Object.entries(stats?.bugs_by_status  ?? {}).map(([name, value]) => ({ name, value: value as number }));
+  const clientStats    = stats?.client_stats ?? null;
 
   return (
     <div className="space-y-6">
@@ -31,13 +37,33 @@ export default function Dashboard() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Overview of your CRM activity</p>
       </div>
 
+      {/* CRM Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Leads" value={stats?.total_leads ?? 0} icon={<Users size={20} />} color="bg-indigo-500" trend="+12%" up />
+        <StatCard label="Total Leads"     value={stats?.total_leads ?? 0}      icon={<Users size={20} />}    color="bg-indigo-500" trend="+12%" up />
         <StatCard label="Conversion Rate" value={`${stats?.conversion_rate ?? 0}%`} icon={<TrendingUp size={20} />} color="bg-emerald-500" trend="+3.1%" up />
-        <StatCard label="Total Bugs" value={stats?.total_bugs ?? 0} icon={<Bug size={20} />} color="bg-rose-500" trend="-2" up={false} />
-        <StatCard label="Open Bugs" value={stats?.bugs_by_status?.['open'] ?? 0} icon={<Activity size={20} />} color="bg-amber-500" trend="" up />
+        <StatCard label="Total Bugs"      value={stats?.total_bugs ?? 0}       icon={<Bug size={20} />}      color="bg-rose-500"   trend="-2"   up={false} />
+        <StatCard label="Open Bugs"       value={stats?.bugs_by_status?.['open'] ?? 0} icon={<Activity size={20} />} color="bg-amber-500" trend="" up />
       </div>
 
+      {/* Client Platform Stats (admin only) */}
+      {isAdmin && clientStats && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Client Platform</h2>
+            <Link to="/users" className="text-xs text-primary-600 hover:underline">View all users →</Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <MiniStat label="Entreprises"    value={clientStats.total_entreprises} icon={<Building2 size={16} />}      color="text-violet-500" />
+            <MiniStat label="Commercials"    value={clientStats.total_commercials} icon={<TrendingUp size={16} />}     color="text-emerald-500" />
+            <MiniStat label="Job Offers"     value={clientStats.total_job_offers}  icon={<Briefcase size={16} />}      color="text-indigo-500" />
+            <MiniStat label="Active Offers"  value={clientStats.active_job_offers} icon={<Briefcase size={16} />}      color="text-blue-500" />
+            <MiniStat label="Submissions"    value={clientStats.total_submissions} icon={<FileText size={16} />}       color="text-amber-500" />
+            <MiniStat label="Messages"       value={clientStats.total_messages}    icon={<MessageSquare size={16} />}  color="text-rose-500" />
+          </div>
+        </div>
+      )}
+
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="card">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Leads by Status</h2>
@@ -115,6 +141,20 @@ function StatCard({ label, value, icon, color, trend, up }: {
             {up ? <ArrowUp size={12} /> : <ArrowDown size={12} />}{trend} this month
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, icon, color }: {
+  label: string; value: number; icon: React.ReactNode; color: string;
+}) {
+  return (
+    <div className="card p-3 flex items-center gap-2">
+      <span className={color}>{icon}</span>
+      <div>
+        <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{value}</p>
+        <p className="text-xs text-gray-400 mt-0.5">{label}</p>
       </div>
     </div>
   );
