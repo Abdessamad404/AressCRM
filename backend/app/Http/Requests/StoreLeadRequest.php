@@ -18,7 +18,8 @@ class StoreLeadRequest extends FormRequest
             'source'         => ['nullable', 'in:LinkedIn,Referral,Cold call,Website,Other'],
             'status'         => ['nullable', 'in:New,Contacted,Interested,Negotiation,Won,Lost'],
             'notes'          => ['nullable', 'string'],
-            'assigned_to_id' => ['nullable', 'uuid', 'exists:users,id'],
+            // Only internal users (agents/admins, no client_type) can be assigned leads
+            'assigned_to_id' => ['nullable', 'uuid', 'exists:users,id,client_type,NULL'],
         ];
     }
 }

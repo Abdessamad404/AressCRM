@@ -115,7 +115,7 @@ export default function LeadEdit() {
               <label className="label">Assign To</label>
               <select {...register('assigned_to_id')} className="input">
                 <option value="">Unassigned</option>
-                {(users ?? []).map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                {(users ?? []).filter((u: any) => !u.client_type).map((u: any) => <option key={u.id} value={u.id}>{u.name} {u.role === 'admin' ? '(admin)' : ''}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">
