@@ -103,7 +103,7 @@ export default function QuizForm() {
     });
   };
 
-  const onSubmit = handleSubmit((d) => mutation.mutateAsync(d as FormData).catch(() => {}));
+  const onSubmit = handleSubmit((d) => mutation.mutateAsync(d as unknown as FormData).catch(() => {}));
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
