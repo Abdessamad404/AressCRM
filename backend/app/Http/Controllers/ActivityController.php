@@ -34,10 +34,10 @@ class ActivityController extends Controller
             $query->whereDate('created_at', '<=', $to);
         }
 
-        $entries = $query->latest('created_at')
+        $paginator = $query->latest('created_at')
             ->paginate($request->query('per_page', 20));
 
-        $data = $entries->through(fn($h) => [
+        $items = $paginator->getCollection()->map(fn($h) => [
             'id'         => $h->id,
             'action'     => $h->action,
             'old_value'  => $h->old_value,
@@ -49,6 +49,12 @@ class ActivityController extends Controller
             'created_at' => $h->created_at,
         ]);
 
-        return response()->json($data->response()->getData(true));
+        return response()->json([
+            'data'         => $items->values(),
+            'current_page' => $paginator->currentPage(),
+            'last_page'    => $paginator->lastPage(),
+            'per_page'     => $paginator->perPage(),
+            'total'        => $paginator->total(),
+        ]);
     }
 }

@@ -14,7 +14,7 @@ class UserController extends Controller
 {
     public function index(): JsonResponse
     {
-        $users = User::orderByRaw("FIELD(role, 'admin', 'user') ASC")
+        $users = User::orderBy('role', 'asc')   // 'admin' sorts before 'user' alphabetically
             ->orderBy('name')
             ->get();
 
