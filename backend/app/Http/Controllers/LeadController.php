@@ -77,7 +77,7 @@ class LeadController extends Controller
 
     public function show(User $lead): JsonResponse
     {
-        return response()->json(['data' => new LeadResource($lead)]);
+        return response()->json(['data' => new LeadResource($lead->load('leadHistory.user'))]);
     }
 
     public function update(UpdateLeadRequest $request, User $lead): JsonResponse

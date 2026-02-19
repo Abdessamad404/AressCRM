@@ -14,7 +14,7 @@ class LeadHistory extends Model
     protected $table = 'lead_history';
 
     protected $fillable = [
-        'lead_id', 'user_id', 'action', 'old_value', 'new_value',
+        'lead_id', 'client_user_id', 'user_id', 'action', 'old_value', 'new_value',
     ];
 
     protected $casts = [
@@ -30,6 +30,11 @@ class LeadHistory extends Model
     public function lead()
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function clientUser()
+    {
+        return $this->belongsTo(User::class, 'client_user_id');
     }
 
     public function user()

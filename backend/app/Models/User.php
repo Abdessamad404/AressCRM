@@ -53,6 +53,11 @@ class User extends Authenticatable
         return $this->hasMany(Lead::class, 'created_by_id');
     }
 
+    public function leadHistory()
+    {
+        return $this->hasMany(\App\Models\LeadHistory::class, 'client_user_id')->latest('created_at');
+    }
+
     public function assignedLeads()
     {
         return $this->hasMany(Lead::class, 'assigned_to_id');
