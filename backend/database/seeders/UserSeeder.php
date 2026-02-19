@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -14,7 +13,7 @@ class UserSeeder extends Seeder
         User::create([
             'name'             => 'Admin User',
             'email'            => 'admin@aress.com',
-            'password'         => Hash::make('password'),
+            'password'         => 'password',
             'role'             => 'admin',
             'theme_preference' => 'system',
         ]);
@@ -30,7 +29,7 @@ class UserSeeder extends Seeder
 
         foreach ($agents as $agent) {
             User::create(array_merge($agent, [
-                'password'         => Hash::make('password'),
+                'password'         => 'password',
                 'role'             => 'user',
                 'theme_preference' => 'system',
             ]));
@@ -46,7 +45,7 @@ class UserSeeder extends Seeder
 
         foreach ($entreprises as $ent) {
             User::create(array_merge($ent, [
-                'password'         => Hash::make('password'),
+                'password'         => 'password',
                 'role'             => 'user',
                 'client_type'      => 'entreprise',
                 'theme_preference' => 'system',
@@ -65,7 +64,7 @@ class UserSeeder extends Seeder
 
         foreach ($commercials as $com) {
             User::create(array_merge($com, [
-                'password'         => Hash::make('password'),
+                'password'         => 'password',
                 'role'             => 'user',
                 'client_type'      => 'commercial',
                 'theme_preference' => 'system',

@@ -24,14 +24,22 @@ echo "==> FRONTEND_URL=$FRONTEND_URL"
 echo "==> Running migrations..."
 php artisan migrate --force
 
-# Seed demo users only if admin doesn't exist yet (idempotent)
+# Seed demo users and ensure passwords are correctly hashed (idempotent)
 echo "==> Checking seed state..."
 php artisan tinker --execute="
-if (!\App\Models\User::where('email', 'admin@aress.com')->exists()) {
+\$admin = \App\Models\User::where('email', 'admin@aress.com')->first();
+if (!\$admin) {
     \Artisan::call('db:seed', ['--class' => 'UserSeeder', '--force' => true]);
-    echo 'Seeded.';
+    echo 'Seeded fresh.';
 } else {
-    echo 'Already seeded, skipping.';
+    // Fix double-hashed passwords: reset all seeded users to correct hash
+    \App\Models\User::whereIn('email', [
+        'admin@aress.com',
+        'sarah@aress.com', 'mike@aress.com', 'emma@aress.com', 'james@aress.com', 'olivia@aress.com',
+        'hr@technova.com', 'jobs@nexusconsult.io', 'talent@brightventures.co', 'recrutement@atlasgroup.fr',
+        'karim.b@mail.com', 'leila.f@mail.com', 'yassine.o@mail.com', 'camille.d@mail.com', 'adrien.m@mail.com', 'nadia.c@mail.com',
+    ])->update(['password' => \Illuminate\Support\Facades\Hash::make('password')]);
+    echo 'Passwords fixed.';
 }
 "
 
