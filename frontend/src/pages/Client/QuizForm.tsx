@@ -85,7 +85,8 @@ export default function QuizForm() {
           options: q.options?.filter(Boolean),
         })),
       };
-      return isEdit ? quizApi.update(id!, payload) : quizApi.create(payload);
+      type QuizPayload = Parameters<typeof quizApi.create>[0];
+      return isEdit ? quizApi.update(id!, payload as unknown as QuizPayload) : quizApi.create(payload as unknown as QuizPayload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-quizzes'] });
