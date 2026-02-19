@@ -10,14 +10,18 @@ class UpdateLeadRequest extends FormRequest
 
     public function rules(): array
     {
+        $leadId = $this->route('lead')?->id;
+
         return [
-            'name'           => ['sometimes', 'required', 'string', 'max:255'],
-            'email'          => ['sometimes', 'required', 'email'],
-            'phone'          => ['nullable', 'string', 'max:50'],
-            'company'        => ['nullable', 'string', 'max:255'],
-            'source'         => ['nullable', 'in:LinkedIn,Referral,Cold call,Website,Other'],
-            'status'         => ['nullable', 'in:New,Contacted,Interested,Negotiation,Won,Lost'],
-            'notes'          => ['nullable', 'string'],
+            'name'        => ['sometimes', 'required', 'string', 'max:255'],
+            'email'       => ['sometimes', 'required', 'email', "unique:users,email,{$leadId}"],
+            'phone'       => ['nullable', 'string', 'max:50'],
+            'company'     => ['nullable', 'string', 'max:255'],
+            'source'      => ['nullable', 'in:LinkedIn,Referral,Cold call,Website,Other'],
+            'status'      => ['nullable', 'in:New,Contacted,Interested,Negotiation,Won,Lost'],
+            'lead_status' => ['nullable', 'in:New,Contacted,Interested,Negotiation,Won,Lost'],
+            'notes'       => ['nullable', 'string'],
+            'client_type' => ['sometimes', 'in:commercial,entreprise'],
         ];
     }
 }

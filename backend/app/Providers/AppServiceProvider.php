@@ -3,9 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Bug;
-use App\Models\Lead;
+use App\Models\User;
 use App\Observers\BugObserver;
-use App\Observers\LeadObserver;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -17,7 +17,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Lead::observe(LeadObserver::class);
         Bug::observe(BugObserver::class);
+
+        // Bind the {lead} route parameter to the User model
+        // (leads are now client users with client_type commercial|entreprise)
+        Route::model('lead', User::class);
     }
 }

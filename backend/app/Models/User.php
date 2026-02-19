@@ -22,6 +22,11 @@ class User extends Authenticatable
         'role',
         'theme_preference',
         'client_type',
+        'phone',
+        'company',
+        'source',
+        'lead_status',
+        'notes',
     ];
 
     protected $hidden = [

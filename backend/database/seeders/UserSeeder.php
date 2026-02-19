@@ -35,39 +35,48 @@ class UserSeeder extends Seeder
             ]));
         }
 
-        // ── 3. Entreprise clients ─────────────────────────────────────────────
+        $statuses = ['New', 'Contacted', 'Interested', 'Negotiation', 'Won', 'Lost'];
+        $sources  = ['LinkedIn', 'Referral', 'Cold call', 'Website', 'Other'];
+
+        // ── 3. Entreprise clients (appear as leads in admin CRM) ──────────────
         $entreprises = [
-            ['name' => 'TechNova HR',      'email' => 'hr@technova.com'],
-            ['name' => 'Nexus Consulting', 'email' => 'jobs@nexusconsult.io'],
-            ['name' => 'Bright Ventures',  'email' => 'talent@brightventures.co'],
-            ['name' => 'Atlas Group',      'email' => 'recrutement@atlasgroup.fr'],
+            ['name' => 'TechNova HR',      'email' => 'hr@technova.com',              'company' => 'TechNova',         'phone' => '+1-555-0201'],
+            ['name' => 'Nexus Consulting', 'email' => 'jobs@nexusconsult.io',         'company' => 'Nexus Consulting',  'phone' => '+1-555-0202'],
+            ['name' => 'Bright Ventures',  'email' => 'talent@brightventures.co',     'company' => 'Bright Ventures',   'phone' => '+1-555-0203'],
+            ['name' => 'Atlas Group',      'email' => 'recrutement@atlasgroup.fr',    'company' => 'Atlas Group',       'phone' => '+33-555-0204'],
         ];
 
-        foreach ($entreprises as $ent) {
+        foreach ($entreprises as $i => $ent) {
             User::create(array_merge($ent, [
                 'password'         => 'password',
                 'role'             => 'user',
                 'client_type'      => 'entreprise',
                 'theme_preference' => 'system',
+                'source'           => $sources[$i % count($sources)],
+                'lead_status'      => $statuses[$i % count($statuses)],
+                'notes'            => 'Entreprise client. Initial contact made.',
             ]));
         }
 
-        // ── 4. Commercial / candidate clients ─────────────────────────────────
+        // ── 4. Commercial / candidate clients (appear as leads in admin CRM) ──
         $commercials = [
-            ['name' => 'Karim Bensalem',  'email' => 'karim.b@mail.com'],
-            ['name' => 'Leila Ferhat',    'email' => 'leila.f@mail.com'],
-            ['name' => 'Yassine Ouhadi',  'email' => 'yassine.o@mail.com'],
-            ['name' => 'Camille Dupont',  'email' => 'camille.d@mail.com'],
-            ['name' => 'Adrien Moreau',   'email' => 'adrien.m@mail.com'],
-            ['name' => 'Nadia Cherkaoui', 'email' => 'nadia.c@mail.com'],
+            ['name' => 'Karim Bensalem',  'email' => 'karim.b@mail.com',   'company' => 'Freelance',        'phone' => '+213-555-0301'],
+            ['name' => 'Leila Ferhat',    'email' => 'leila.f@mail.com',   'company' => 'Self-employed',     'phone' => '+213-555-0302'],
+            ['name' => 'Yassine Ouhadi',  'email' => 'yassine.o@mail.com', 'company' => 'DevStudio',         'phone' => '+212-555-0303'],
+            ['name' => 'Camille Dupont',  'email' => 'camille.d@mail.com', 'company' => 'Agence Dupont',     'phone' => '+33-555-0304'],
+            ['name' => 'Adrien Moreau',   'email' => 'adrien.m@mail.com',  'company' => 'Moreau & Partners', 'phone' => '+33-555-0305'],
+            ['name' => 'Nadia Cherkaoui', 'email' => 'nadia.c@mail.com',   'company' => 'NC Consulting',     'phone' => '+212-555-0306'],
         ];
 
-        foreach ($commercials as $com) {
+        foreach ($commercials as $i => $com) {
             User::create(array_merge($com, [
                 'password'         => 'password',
                 'role'             => 'user',
                 'client_type'      => 'commercial',
                 'theme_preference' => 'system',
+                'source'           => $sources[($i + 2) % count($sources)],
+                'lead_status'      => $statuses[($i + 1) % count($statuses)],
+                'notes'            => 'Commercial candidate. Portfolio under review.',
             ]));
         }
     }

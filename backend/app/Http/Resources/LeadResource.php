@@ -16,10 +16,11 @@ class LeadResource extends JsonResource
             'phone'       => $this->phone,
             'company'     => $this->company,
             'source'      => $this->source,
-            'status'      => $this->status,
+            'status'      => $this->lead_status,  // alias lead_status → status for frontend
             'notes'       => $this->notes,
-            'created_by'  => $this->whenLoaded('createdBy', fn() => new UserResource($this->createdBy)),
-            'history'     => $this->whenLoaded('history', fn() => HistoryResource::collection($this->history)),
+            'client_type' => $this->client_type,
+            'created_by'  => null,
+            'history'     => [],
             'created_at'  => $this->created_at,
             'updated_at'  => $this->updated_at,
         ];
