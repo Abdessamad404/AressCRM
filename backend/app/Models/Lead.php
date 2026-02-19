@@ -16,7 +16,7 @@ class Lead extends Model
     protected $fillable = [
         'name', 'email', 'phone', 'company',
         'source', 'status', 'notes',
-        'created_by_id', 'assigned_to_id',
+        'created_by_id',
     ];
 
     protected static function boot(): void
@@ -28,11 +28,6 @@ class Lead extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by_id');
-    }
-
-    public function assignedTo()
-    {
-        return $this->belongsTo(User::class, 'assigned_to_id');
     }
 
     public function history()

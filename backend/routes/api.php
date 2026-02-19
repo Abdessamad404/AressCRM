@@ -7,6 +7,7 @@ use App\Http\Controllers\BugController;
 use App\Http\Controllers\ExceptionLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\JobOfferController;
 use App\Http\Controllers\QuizController;
@@ -23,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+
+    // Activity log
+    Route::get('/activity', [ActivityController::class, 'index']);
 
     // Leads
     Route::get('/leads', [LeadController::class, 'index']);

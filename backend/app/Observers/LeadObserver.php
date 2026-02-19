@@ -8,13 +8,25 @@ use Illuminate\Support\Facades\Auth;
 
 class LeadObserver
 {
-    private array $tracked = ['status', 'assigned_to_id', 'name', 'email', 'phone', 'company', 'source', 'notes'];
+    // Fields to track on update, mapped to readable labels
+    private array $tracked = [
+        'status'  => 'Status updated',
+        'name'    => 'Name updated',
+        'email'   => 'Email updated',
+        'phone'   => 'Phone updated',
+        'company' => 'Company updated',
+        'source'  => 'Source updated',
+        'notes'   => 'Notes updated',
+    ];
 
     public function created(Lead $lead): void
     {
+        // Prefer authenticated user; fall back to created_by_id for seeder context
+        $userId = Auth::id() ?? $lead->created_by_id;
+
         LeadHistory::create([
             'lead_id'   => $lead->id,
-            'user_id'   => Auth::id(),
+            'user_id'   => $userId,
             'action'    => 'Lead created',
             'old_value' => null,
             'new_value' => $lead->name,
@@ -23,16 +35,16 @@ class LeadObserver
 
     public function updated(Lead $lead): void
     {
-        $userId = Auth::id();
+        $userId = Auth::id() ?? $lead->created_by_id;
 
-        foreach ($this->tracked as $field) {
+        foreach ($this->tracked as $field => $label) {
             if ($lead->wasChanged($field)) {
                 LeadHistory::create([
                     'lead_id'   => $lead->id,
                     'user_id'   => $userId,
-                    'action'    => "Changed {$field}",
-                    'old_value' => (string) $lead->getOriginal($field),
-                    'new_value' => (string) $lead->getAttribute($field),
+                    'action'    => $label,
+                    'old_value' => $lead->getOriginal($field) !== null ? (string) $lead->getOriginal($field) : null,
+                    'new_value' => $lead->getAttribute($field) !== null ? (string) $lead->getAttribute($field) : null,
                 ]);
             }
         }

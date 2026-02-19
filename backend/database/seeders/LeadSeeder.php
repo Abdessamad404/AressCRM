@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Lead;
-use App\Models\LeadHistory;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -52,35 +51,17 @@ class LeadSeeder extends Seeder
             ['name' => 'Chris Anderson',  'email' => 'c.anderson@nordtech.se',   'company' => 'NordTech',       'phone' => '+46-555-0130'],
         ];
 
-        $actions = ['Lead created', 'Email sent', 'Call made', 'Meeting scheduled', 'Proposal sent'];
-
         foreach ($leadsData as $i => $data) {
-            $agent  = $agents[$i % $agents->count()];
             $status = $statuses[$i % count($statuses)];
             $source = $sources[$i % count($sources)];
 
-            $lead = Lead::withoutEvents(function () use ($data, $status, $source, $admin, $agent) {
-                return Lead::create(array_merge($data, [
-                    'id'             => (string) \Illuminate\Support\Str::uuid(),
-                    'status'         => $status,
-                    'source'         => $source,
-                    'notes'          => 'Initial contact made. Follow up scheduled.',
-                    'created_by_id'  => $admin->id,
-                    'assigned_to_id' => $agent->id,
-                ]));
-            });
-
-            $count = rand(2, 4);
-            for ($j = 0; $j < $count; $j++) {
-                LeadHistory::create([
-                    'lead_id'    => $lead->id,
-                    'user_id'    => $agent->id,
-                    'action'     => $actions[$j % count($actions)],
-                    'old_value'  => null,
-                    'new_value'  => null,
-                    'created_at' => now()->subDays(rand(1, 30)),
-                ]);
-            }
+            // Let the observer fire — it will record "Lead created" automatically
+            Lead::create(array_merge($data, [
+                'status'        => $status,
+                'source'        => $source,
+                'notes'         => 'Initial contact made. Follow up scheduled.',
+                'created_by_id' => $admin->id,
+            ]));
         }
     }
 }

@@ -1,12 +1,13 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Bug, Kanban, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Users, Bug, Kanban, UserCircle, Activity } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/leads', label: 'Leads', icon: Users, end: true },
   { to: '/leads/kanban', label: 'Kanban', icon: Kanban, end: true },
-  { to: '/bugs', label: 'Exceptions', icon: Bug, end: true },
+  { to: '/bugs',     label: 'Exceptions',    icon: Bug,      end: true },
+  { to: '/activity', label: 'Activity Log',  icon: Activity, end: true },
 ];
 
 const adminItems = [

@@ -14,6 +14,7 @@ import BugsIndex from './pages/Bugs/Index';
 import BugShow from './pages/Bugs/Show';
 import UsersIndex from './pages/Users/Index';
 import ClientProgress from './pages/Admin/ClientProgress';
+import ActivityIndex from './pages/Activity/Index';
 
 // Client pages
 import ClientDashboard from './pages/Client/Dashboard';
@@ -84,8 +85,10 @@ export default function App() {
         <Route path="/leads/:id"      element={<LeadShow />} />
         <Route path="/leads/:id/edit" element={<LeadEdit />} />
 
-        <Route path="/bugs"    element={<BugsIndex />} />
+        <Route path="/bugs"     element={<BugsIndex />} />
         <Route path="/bugs/:id" element={<BugShow />} />
+
+        <Route path="/activity" element={<ActivityIndex />} />
 
         <Route path="/users" element={<AdminRoute><UsersIndex /></AdminRoute>} />
         <Route path="/users/:id/progress" element={<AdminRoute><ClientProgress /></AdminRoute>} />
