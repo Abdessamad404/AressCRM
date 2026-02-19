@@ -37,7 +37,11 @@ export default function UsersIndex() {
   const entrepriseCount = (users ?? []).filter(u => u.client_type === 'entreprise').length;
   const commercialCount = (users ?? []).filter(u => u.client_type === 'commercial').length;
 
-  const filtered = (users ?? []).filter(u => {
+
+  // Only show admin + client accounts (hide internal role=user/no client_type rows)
+  const relevant = (users ?? []).filter(u => u.role === 'admin' || !!u.client_type);
+
+  const filtered = relevant.filter(u => {
     const matchSearch = !search ||
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase());

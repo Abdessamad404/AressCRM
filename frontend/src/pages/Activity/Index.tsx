@@ -61,6 +61,8 @@ export default function ActivityIndex() {
       const r = await api.get('/api/activity', { params });
       return r.data;
     },
+    refetchInterval: 15000,   // poll every 15 s
+    refetchOnWindowFocus: true,
   });
 
   const entries  = data?.data ?? [];
