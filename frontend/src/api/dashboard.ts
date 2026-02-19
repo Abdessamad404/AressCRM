@@ -13,8 +13,10 @@ export interface DashboardStats {
   total_leads: number;
   leads_by_status: Record<string, number>;
   conversion_rate: number;
+  leads_trend: number | null;
   total_bugs: number;
   bugs_by_status: Record<string, number>;
+  bugs_trend: number | null;
   client_stats: ClientStats | null;
   recent_activity: RecentActivity[];
 }
