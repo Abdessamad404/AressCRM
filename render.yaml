@@ -99,7 +99,4 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: aresscrm-api
-          property: host
+        value: aresscrm-api.onrender.com
