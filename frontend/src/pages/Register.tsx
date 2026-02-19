@@ -74,8 +74,20 @@ export default function Register() {
       const user = await authApi.register({ ...data, client_type: clientType });
       setUser(user);
       navigate('/client/dashboard');
-    } catch {
-      setError('root', { message: 'Registration failed. Please try again.' });
+    } catch (err: any) {
+      // Parse Laravel 422 validation errors — show the first field-level message
+      const errors = err?.response?.data?.errors;
+      if (errors) {
+        const firstField = Object.keys(errors)[0];
+        const firstMsg = errors[firstField]?.[0];
+        if (firstField === 'email') {
+          setError('email', { message: firstMsg });
+        } else {
+          setError('root', { message: firstMsg });
+        }
+      } else {
+        setError('root', { message: err?.response?.data?.message ?? 'Registration failed. Please try again.' });
+      }
     }
   };
 

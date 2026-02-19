@@ -107,7 +107,7 @@ export default function Login() {
                   {...register('email')}
                   type="email"
                   autoComplete="email"
-                  placeholder="admin@aress.com"
+                  placeholder="you@example.com"
                   className={`w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
                     errors.email
                       ? 'border-red-300 dark:border-red-700 focus:ring-red-200 dark:focus:ring-red-900'
@@ -157,10 +157,6 @@ export default function Login() {
             </Link>
           </p>
 
-          <div className="mt-8 p-3.5 rounded-xl bg-primary-50 dark:bg-primary-950/40 border border-primary-100 dark:border-primary-900/40">
-            <p className="text-xs font-medium text-primary-700 dark:text-primary-300 mb-1">Demo credentials</p>
-            <p className="text-xs text-primary-600 dark:text-primary-400">admin@aress.com · password</p>
-          </div>
         </div>
       </div>
     </div>
