@@ -50,7 +50,7 @@ class LeadController extends Controller
     public function show(Lead $lead): JsonResponse
     {
         return response()->json(['data' => new LeadResource(
-            $lead->load(['createdBy', 'assignedTo', 'history.user'])
+            $lead->load(['createdBy', 'history.user'])
         )]);
     }
 
