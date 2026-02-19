@@ -30,16 +30,20 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Invalid credentials.'], 401);
+        try {
+            if (!Auth::attempt($request->only('email', 'password'))) {
+                return response()->json(['message' => 'Invalid credentials.'], 401);
+            }
+
+            $user  = User::where('email', $request->email)->firstOrFail();
+            $token = $user->createToken('api-token')->plainTextToken;
+
+            return response()->json([
+                'data' => array_merge((new UserResource($user))->resolve(), ['token' => $token]),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['debug_message' => $e->getMessage(), 'debug_file' => $e->getFile().':'.$e->getLine()], 500);
         }
-
-        $user  = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        return response()->json([
-            'data' => array_merge((new UserResource($user))->resolve(), ['token' => $token]),
-        ]);
     }
 
     public function logout(Request $request): JsonResponse
