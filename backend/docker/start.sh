@@ -24,6 +24,17 @@ echo "==> FRONTEND_URL=$FRONTEND_URL"
 echo "==> Running migrations..."
 php artisan migrate --force
 
+# Seed demo users only if admin doesn't exist yet (idempotent)
+echo "==> Checking seed state..."
+php artisan tinker --execute="
+if (!\App\Models\User::where('email', 'admin@aress.com')->exists()) {
+    \Artisan::call('db:seed', ['--class' => 'UserSeeder', '--force' => true]);
+    echo 'Seeded.';
+} else {
+    echo 'Already seeded, skipping.';
+}
+"
+
 # Clear & rebuild caches for production
 echo "==> Optimising..."
 php artisan config:cache
