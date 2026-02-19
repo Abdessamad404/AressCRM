@@ -20,7 +20,9 @@ interface ActivityEntry {
 
 interface Paginated {
   data: ActivityEntry[];
-  meta: { current_page: number; last_page: number; total: number };
+  current_page: number;
+  last_page: number;
+  total: number;
 }
 
 const ACTION_COLORS: Record<string, string> = {
@@ -61,8 +63,10 @@ export default function ActivityIndex() {
     },
   });
 
-  const entries = data?.data ?? [];
-  const meta    = data?.meta;
+  const entries  = data?.data ?? [];
+  const total    = data?.total ?? 0;
+  const lastPage = data?.last_page ?? 1;
+  const curPage  = data?.current_page ?? 1;
 
   return (
     <div className="space-y-4">
@@ -70,7 +74,7 @@ export default function ActivityIndex() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Activity Log</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {isAdmin ? 'All team activity' : 'Your activity'} · {meta?.total ?? 0} entries
+            {isAdmin ? 'All team activity' : 'Your activity'} · {total} entries
           </p>
         </div>
       </div>
@@ -163,10 +167,10 @@ export default function ActivityIndex() {
         )}
 
         {/* Pagination */}
-        {meta && meta.last_page > 1 && (
+        {lastPage > 1 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 dark:border-gray-700">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Page {meta.current_page} of {meta.last_page} · {meta.total} total
+              Page {curPage} of {lastPage} · {total} total
             </p>
             <div className="flex items-center gap-1">
               <button
@@ -175,7 +179,7 @@ export default function ActivityIndex() {
                 className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >← Prev</button>
               <button
-                disabled={page >= meta.last_page}
+                disabled={page >= lastPage}
                 onClick={() => setPage(p => p + 1)}
                 className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >Next →</button>
