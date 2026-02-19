@@ -6,21 +6,17 @@ const BASE_URL = rawApiUrl.startsWith('http') ? rawApiUrl : `https://${rawApiUrl
 
 const api = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 });
 
-// Attach CSRF token from cookie to every mutating request
+// Attach Bearer token from localStorage to every request
 api.interceptors.request.use((config) => {
-  const match = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('XSRF-TOKEN='));
-
-  if (match) {
-    config.headers['X-XSRF-TOKEN'] = decodeURIComponent(match.split('=')[1]);
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
   return config;
 });
@@ -29,7 +25,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isAuthRoute = ['/api/login', '/api/register', '/api/user', '/sanctum/csrf-cookie'].some(
+    const isAuthRoute = ['/api/login', '/api/register', '/api/user'].some(
       (path) => error.config?.url?.includes(path)
     );
     if (error.response?.status === 401 && !isAuthRoute) {
