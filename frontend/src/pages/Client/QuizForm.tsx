@@ -41,7 +41,7 @@ export default function QuizForm() {
     enabled: isEdit,
   });
 
-  const { register, control, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       is_published: false,
@@ -69,7 +69,7 @@ export default function QuizForm() {
           correct_answer: q.correct_answer ?? '',
           points:         q.points,
           order:          q.order,
-        })),
+        })) as FormData['questions'],
       });
     }
   }, [existing, reset]);
@@ -103,6 +103,8 @@ export default function QuizForm() {
     });
   };
 
+  const onSubmit = handleSubmit((d) => mutation.mutateAsync(d as FormData).catch(() => {}));
+
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mb-6 transition-colors">
@@ -113,7 +115,7 @@ export default function QuizForm() {
         {isEdit ? 'Edit Quiz' : 'Create Quiz'}
       </h1>
 
-      <form onSubmit={handleSubmit((d: FormData) => mutation.mutateAsync(d).catch(() => {}))} className="space-y-5">
+      <form onSubmit={onSubmit} className="space-y-5">
         {/* Meta */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Quiz Details</h2>
