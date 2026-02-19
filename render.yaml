@@ -62,15 +62,9 @@ services:
       - key: LOG_LEVEL
         value: error
       - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: aresscrm-frontend
-          property: host
+        value: https://aresscrm-frontend.onrender.com
       - key: SANCTUM_STATEFUL_DOMAINS
-        fromService:
-          type: web
-          name: aresscrm-frontend
-          property: host
+        value: aresscrm-frontend.onrender.com
       - key: SESSION_SAME_SITE
         value: none
       - key: SESSION_SECURE_COOKIE
