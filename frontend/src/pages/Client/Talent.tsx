@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { profileApi } from '../../api/client';
 import { MapPin, TrendingUp, Briefcase, MessageCircle, Star, ChevronRight } from 'lucide-react';
+import { SECTORS } from './JobOfferForm';
 
 export default function TalentBrowser() {
   const [sector, setSector] = useState('');
@@ -30,12 +31,18 @@ export default function TalentBrowser() {
 
       {/* Filters */}
       <div className="flex gap-3 mb-6 flex-wrap">
-        <input
-          value={sector}
-          onChange={(e) => { setSector(e.target.value); setPage(1); }}
-          placeholder="Sector (e.g. SaaS)..."
-          className="px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 w-44"
-        />
+        <div>
+          <input
+            value={sector}
+            onChange={(e) => { setSector(e.target.value); setPage(1); }}
+            list="talent-sector-options"
+            placeholder="Sector..."
+            className="px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 w-44"
+          />
+          <datalist id="talent-sector-options">
+            {SECTORS.map((s) => <option key={s} value={s} />)}
+          </datalist>
+        </div>
         <input
           value={location}
           onChange={(e) => { setLocation(e.target.value); setPage(1); }}

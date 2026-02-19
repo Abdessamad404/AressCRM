@@ -14,6 +14,7 @@ class Profile extends Model
         'user_id',
         'title',
         'bio',
+        // Commercial
         'skills',
         'expertise',
         'location',
@@ -22,9 +23,17 @@ class Profile extends Model
         'commission_rate',
         'linkedin_url',
         'avatar_url',
+        'avatar_path',
+        'avatar_name',
         'achievements',
         'sectors',
         'is_published',
+        // Entreprise
+        'company_name',
+        'company_website',
+        'company_size',
+        'company_logo_path',
+        'company_logo_name',
     ];
 
     protected $casts = [

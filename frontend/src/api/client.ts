@@ -27,6 +27,13 @@ export const profileApi = {
     return res.data.data;
   },
 
+  upsertProfileMultipart: async (fd: globalThis.FormData): Promise<Profile> => {
+    const res = await api.post('/api/client/profile', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.data;
+  },
+
   listProfiles: async (params?: { sector?: string; location?: string; page?: number }): Promise<Paginated<Profile>> => {
     const res = await api.get('/api/client/profiles', { params });
     return flatPage<Profile>(res.data);

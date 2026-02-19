@@ -2,22 +2,32 @@
 export interface Profile {
   id: string;
   user_id: string;
-  title: string | null;
+  // Shared
   bio: string | null;
-  skills: string[];
-  expertise: string[];
   location: string | null;
-  availability: string | null;
-  experience_years: number | null;
-  commission_rate: number | null;
   linkedin_url: string | null;
-  avatar_url: string | null;
-  achievements: string[];
   sectors: string[];
   is_published: boolean;
   created_at: string;
   updated_at: string;
   user?: { id: string; name: string; email: string };
+  // Commercial fields
+  title: string | null;
+  skills: string[];
+  expertise: string[];
+  availability: string | null;
+  experience_years: number | null;
+  commission_rate: number | null;
+  avatar_url: string | null;
+  avatar_path: string | null;
+  avatar_name: string | null;
+  achievements: string[];
+  // Entreprise fields
+  company_name: string | null;
+  company_website: string | null;
+  company_size: string | null;
+  company_logo_path: string | null;
+  company_logo_name: string | null;
 }
 
 // ─── Job Offer ────────────────────────────────────────────────────────────────

@@ -24,6 +24,7 @@ import JobOfferDetail from './pages/Client/JobOfferDetail';
 import MyApplications from './pages/Client/MyApplications';
 import Missions from './pages/Client/Missions';
 import CommercialProfile from './pages/Client/Profile';
+import EntrepriseProfile from './pages/Client/EntrepriseProfile';
 import QuizzesPage from './pages/Client/Quizzes';
 import QuizForm from './pages/Client/QuizForm';
 import QuizTake from './pages/Client/QuizTake';
@@ -111,8 +112,9 @@ export default function App() {
         <Route path="/client/my-applications" element={<MyApplications />} />
         <Route path="/client/missions"         element={<Missions />} />
 
-        {/* Commercial profile */}
-        <Route path="/client/profile" element={<CommercialProfile />} />
+        {/* Profiles */}
+        <Route path="/client/profile"            element={<CommercialProfile />} />
+        <Route path="/client/company-profile"    element={<EntrepriseProfile />} />
 
         {/* Quizzes */}
         <Route path="/client/quizzes"                    element={<QuizzesPage />} />

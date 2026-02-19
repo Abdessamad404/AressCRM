@@ -66,15 +66,14 @@ export default function Register() {
   };
 
   const onSubmit = async (data: FormData) => {
+    if (!clientType) {
+      setError('root', { message: 'Please select an account type (Commercial or Entreprise) to continue.' });
+      return;
+    }
     try {
-      const user = await authApi.register({ ...data, client_type: clientType ?? undefined });
+      const user = await authApi.register({ ...data, client_type: clientType });
       setUser(user);
-      // Redirect based on account type
-      if (user.client_type) {
-        navigate('/client/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/client/dashboard');
     } catch {
       setError('root', { message: 'Registration failed. Please try again.' });
     }
@@ -159,8 +158,8 @@ export default function Register() {
               </button>
             </div>
             {!clientType && (
-              <p className="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
-                Leave blank for internal/admin account
+              <p className="mt-2 text-xs text-amber-500 dark:text-amber-400 text-center">
+                Please select your account type to continue
               </p>
             )}
           </div>

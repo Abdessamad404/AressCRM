@@ -138,7 +138,15 @@ export default function JobOfferForm() {
               <input {...register('location')} placeholder="Paris, France" className={inputClass} />
             </FormField>
             <FormField label="Sector" error={errors.sector?.message}>
-              <input {...register('sector')} placeholder="SaaS, Finance..." className={inputClass} />
+              <input
+                {...register('sector')}
+                list="sector-options"
+                placeholder="Select or type..."
+                className={inputClass}
+              />
+              <datalist id="sector-options">
+                {SECTORS.map((s) => <option key={s} value={s} />)}
+              </datalist>
             </FormField>
           </div>
 
@@ -312,3 +320,10 @@ function FormField({ label, children, error }: { label: string; children: React.
 }
 
 const inputClass = 'w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 focus:border-primary-400 transition-all';
+
+export const SECTORS = [
+  'SaaS', 'FinTech', 'HealthTech', 'EdTech', 'E-commerce', 'Cybersecurity',
+  'AI / ML', 'HR Tech', 'LegalTech', 'PropTech', 'InsurTech', 'MarTech',
+  'Logistics', 'Manufacturing', 'Retail', 'Banking', 'Insurance', 'Real Estate',
+  'Consulting', 'Telecom', 'Energy', 'Automotive', 'Media', 'Other',
+];
