@@ -13,10 +13,10 @@ class ActivityController extends Controller
         $isAdmin = $request->user()->role === 'admin';
         $userId  = $request->user()->id;
 
-        $query = LeadHistory::with(['user', 'lead'])
+        $query = LeadHistory::with(['user', 'clientUser', 'lead'])
             ->when(!$isAdmin, fn($q) => $q->where('user_id', $userId));
 
-        // Filter by user (admin only)
+        // Filter by actor (admin only)
         if ($isAdmin && $request->query('user_id')) {
             $query->where('user_id', $request->query('user_id'));
         }
@@ -42,8 +42,9 @@ class ActivityController extends Controller
             'action'     => $h->action,
             'old_value'  => $h->old_value,
             'new_value'  => $h->new_value,
-            'lead_id'    => $h->lead_id,
-            'lead_name'  => $h->lead?->name ?? 'Deleted Lead',
+            // Prefer client_user_id (new user-as-lead history), fall back to lead_id (legacy)
+            'lead_id'    => $h->client_user_id ?? $h->lead_id,
+            'lead_name'  => $h->clientUser?->name ?? $h->lead?->name ?? 'Unknown',
             'user_id'    => $h->user_id,
             'user_name'  => $h->user?->name ?? 'System',
             'created_at' => $h->created_at,

@@ -45,6 +45,7 @@ export default function LeadEdit() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', id] });
+      queryClient.invalidateQueries({ queryKey: ['activity'] });
       navigate(`/leads/${id}`);
     },
   });
