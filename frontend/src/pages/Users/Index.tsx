@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
-import { Search, Shield, User, Briefcase, TrendingUp, ChevronDown, BarChart2 } from 'lucide-react';
+import { Search, Shield, User, Briefcase, TrendingUp, BarChart2 } from 'lucide-react';
 import { formatRelativeTime } from '../../utils/helpers';
 import { useAuth } from '../../contexts/AuthContext';
 import type { User as UserType } from '../../types/auth';
@@ -23,7 +23,6 @@ function roleBadge(user: UserType) {
 export default function UsersIndex() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'admin' | 'agent' | 'entreprise' | 'commercial'>('all');
-  const queryClient = useQueryClient();
   const { user: me } = useAuth();
 
   const { data: users, isLoading } = useQuery({
@@ -32,12 +31,6 @@ export default function UsersIndex() {
       const r = await api.get('/api/users');
       return r.data.data as UserType[];
     },
-  });
-
-  const updateRoleMutation = useMutation({
-    mutationFn: ({ id, role }: { id: string; role: string }) =>
-      api.put(`/api/users/${id}`, { role }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
 
   const adminCount      = (users ?? []).filter(u => u.role === 'admin').length;
@@ -57,8 +50,6 @@ export default function UsersIndex() {
       filter === 'commercial' ? u.client_type === 'commercial' : true;
     return matchSearch && matchFilter;
   });
-
-  const isOnlyAdmin = adminCount <= 1;
 
   return (
     <div className="space-y-4">
@@ -125,9 +116,6 @@ export default function UsersIndex() {
                   key={user.id}
                   user={user}
                   isSelf={user.id === me?.id}
-                  isOnlyAdmin={isOnlyAdmin}
-                  onRoleChange={(role) => updateRoleMutation.mutate({ id: user.id, role })}
-                  isUpdating={updateRoleMutation.isPending}
                 />
               ))}
             </tbody>
@@ -138,38 +126,13 @@ export default function UsersIndex() {
   );
 }
 
-function UserRow({
-  user,
-  isSelf,
-  isOnlyAdmin,
-  onRoleChange,
-  isUpdating,
-}: {
-  user: UserType;
-  isSelf: boolean;
-  isOnlyAdmin: boolean;
-  onRoleChange: (role: string) => void;
-  isUpdating: boolean;
-}) {
+function UserRow({ user, isSelf }: { user: UserType; isSelf: boolean }) {
   const badge    = roleBadge(user);
   const initials = user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   const isClient = !!user.client_type;
-  const isAdmin  = user.role === 'admin';
-
-  // Clients can't be promoted/demoted, self can't be changed, last admin can't be demoted
-  const canToggle = !isClient && !isSelf && !(isAdmin && isOnlyAdmin);
-
-  const handleToggle = () => {
-    if (!canToggle) return;
-    const newRole = isAdmin ? 'user' : 'admin';
-    const label   = isAdmin ? 'Demote to Agent' : 'Promote to Admin';
-    if (window.confirm(`${label}: ${user.name}?`)) {
-      onRoleChange(newRole);
-    }
-  };
 
   const avatarColor =
-    isAdmin                          ? 'bg-indigo-500'  :
+    user.role === 'admin'            ? 'bg-indigo-500'  :
     user.client_type === 'entreprise'? 'bg-violet-500'  :
     user.client_type === 'commercial'? 'bg-emerald-500' :
     'bg-gray-400 dark:bg-gray-600';
@@ -196,30 +159,13 @@ function UserRow({
       </td>
       <td className="px-4 py-3 text-gray-400 text-xs">{formatRelativeTime(user.created_at ?? '')}</td>
       <td className="px-4 py-3 text-right">
-        {isClient ? (
+        {isClient && (
           <Link
             to={`/users/${user.id}/progress`}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
             <BarChart2 size={12} /> View Progress
           </Link>
-        ) : isSelf ? (
-          <span className="text-xs text-gray-400 italic">—</span>
-        ) : (isAdmin && isOnlyAdmin) ? (
-          <span className="text-xs text-amber-500 italic">Only admin</span>
-        ) : (
-          <button
-            onClick={handleToggle}
-            disabled={isUpdating}
-            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${
-              isAdmin
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40'
-            }`}
-          >
-            <ChevronDown size={12} />
-            {isAdmin ? 'Demote to Agent' : 'Promote to Admin'}
-          </button>
         )}
       </td>
     </tr>
