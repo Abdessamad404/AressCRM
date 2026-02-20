@@ -49,8 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/bugs/{bug}/resolve', [ExceptionLogController::class, 'resolve']);
     Route::delete('/bugs/{bug}', [BugController::class, 'destroy']);
 
-    // Frontend error reporting
-    Route::post('/exceptions/report', [ExceptionLogController::class, 'report']);
+    // Frontend error reporting (throttled — max 30 reports/min per user to prevent log flooding)
+    Route::post('/exceptions/report', [ExceptionLogController::class, 'report'])->middleware('throttle:30,1');
 
     // Users (admin only)
     Route::middleware('role:admin')->group(function () {

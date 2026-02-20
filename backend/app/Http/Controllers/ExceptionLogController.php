@@ -26,23 +26,32 @@ class ExceptionLogController extends Controller
             'environment'     => ['sometimes', 'string', 'max:20'],
         ]);
 
-        // Deduplicate by fingerprint (exception class + first stack line)
-        $fingerprint = md5(($data['exception_class'] ?? '') . substr($data['stack_trace'] ?? '', 0, 200));
+        // Deduplicate by fingerprint — strip line numbers so the same error after a code
+        // change (line shift) still matches the existing open bug instead of creating a new one
+        $normalizedStack = preg_replace('/:\d+(\)|$)/m', ':?$1', $data['stack_trace'] ?? '');
+        $fingerprint = md5(($data['exception_class'] ?? '') . substr($normalizedStack, 0, 300));
 
         $existing = Bug::where('fingerprint', $fingerprint)
             ->whereNotIn('status', ['resolved', 'closed'])
             ->first();
 
         if ($existing) {
-            $existing->increment('occurrence_count');
-            $existing->update(['last_occurred_at' => now()]);
+            // Use a single DB update to avoid double-firing the model observer
+            $existing->updateQuietly([
+                'occurrence_count' => $existing->occurrence_count + 1,
+                'last_occurred_at' => now(),
+            ]);
             return response()->json(['data' => new BugResource($existing), 'deduplicated' => true]);
         }
+
+        // Reported by the authenticated user (if logged in), otherwise fall back to first admin
+        $reporterId = $request->user()?->id
+            ?? \App\Models\User::where('role', 'admin')->value('id');
 
         $bug = Bug::create(array_merge($data, [
             'status'           => 'open',
             'priority'         => $this->detectPriority($data),
-            'reported_by_id'   => $request->user()?->id ?? Bug::first()?->reported_by_id, // fallback
+            'reported_by_id'   => $reporterId,
             'environment'      => $data['environment'] ?? app()->environment(),
             'user_agent'       => $data['user_agent'] ?? $request->userAgent(),
             'url'              => $data['url'] ?? $request->header('Referer'),
@@ -80,14 +89,18 @@ class ExceptionLogController extends Controller
     public static function logException(\Throwable $e, ?Request $request = null): void
     {
         try {
-            $fingerprint = md5(get_class($e) . substr($e->getMessage(), 0, 100));
+            // Fingerprint on class + normalised trace (line numbers stripped) for stable deduplication
+            $normalizedTrace = preg_replace('/:\d+(\)|$)/m', ':?$1', $e->getTraceAsString());
+            $fingerprint = md5(get_class($e) . substr($normalizedTrace, 0, 300));
             $existing = Bug::where('fingerprint', $fingerprint)
                 ->whereNotIn('status', ['resolved', 'closed'])
                 ->first();
 
             if ($existing) {
-                $existing->increment('occurrence_count');
-                $existing->update(['last_occurred_at' => now()]);
+                $existing->updateQuietly([
+                    'occurrence_count' => $existing->occurrence_count + 1,
+                    'last_occurred_at' => now(),
+                ]);
                 return;
             }
 
