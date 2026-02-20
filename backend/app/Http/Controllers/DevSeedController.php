@@ -270,15 +270,18 @@ class DevSeedController extends Controller
      */
     public function wipe(): JsonResponse
     {
-        // Use DELETE (not TRUNCATE) — works on both SQLite (local) and MySQL (production)
-        QuizAssignment::query()->delete();
-        QuizSubmission::query()->delete();
-        Application::query()->delete();
-        QuizQuestion::query()->delete();
-        Quiz::query()->delete();
-        JobOffer::query()->delete();
+        try {
+            QuizAssignment::query()->delete();
+            QuizSubmission::query()->delete();
+            Application::query()->delete();
+            QuizQuestion::query()->delete();
+            Quiz::query()->delete();
+            JobOffer::query()->delete();
 
-        return response()->json(['message' => 'Wiped. Users intact, everything else gone.']);
+            return response()->json(['message' => 'Wiped. Users intact, everything else gone.']);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
