@@ -7,9 +7,26 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useQuery } from '@tanstack/react-query';
-import { messageApi } from '../../api/client';
+import { messageApi, notificationApi } from '../../api/client';
 
-function NavItem({ to, icon: Icon, label, end = false }: { to: string; icon: React.ElementType; label: string; end?: boolean }) {
+// ─── Badge helper — Instagram-style red dot on the icon ───────────────────────
+function Badge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[1rem] px-0.5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none ring-2 ring-white dark:ring-gray-900 pointer-events-none">
+      {count > 9 ? '9+' : count}
+    </span>
+  );
+}
+
+// ─── Nav item with optional badge ─────────────────────────────────────────────
+function NavItem({ to, icon: Icon, label, end = false, badge }: {
+  to: string;
+  icon: React.ElementType;
+  label: string;
+  end?: boolean;
+  badge?: number;
+}) {
   return (
     <NavLink
       to={to}
@@ -22,7 +39,10 @@ function NavItem({ to, icon: Icon, label, end = false }: { to: string; icon: Rea
         }`
       }
     >
-      <Icon size={18} />
+      <div className="relative shrink-0">
+        <Icon size={18} />
+        <Badge count={badge ?? 0} />
+      </div>
       {label}
     </NavLink>
   );
@@ -33,19 +53,57 @@ export default function ClientLayout() {
   const { resolvedTheme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const { data: unreadCount } = useQuery({
+  const isCommercial = user?.client_type === 'commercial';
+  const isEntreprise = user?.client_type === 'entreprise';
+
+  // ── Unread messages (10s — conversational speed) ─────────────────────────
+  const { data: unreadCount = 0 } = useQuery({
     queryKey: ['unread-count'],
     queryFn: messageApi.getUnreadCount,
-    refetchInterval: 30000,
+    refetchInterval: 10000,
+  });
+
+  // ── Commercial notification counts (60s polling) ─────────────────────────
+  const { data: newOffersCount = 0 } = useQuery({
+    queryKey: ['notif-new-offers'],
+    queryFn: notificationApi.newJobOffersCount,
+    enabled: isCommercial,
+    refetchInterval: 60000,
+  });
+
+  const { data: appActionCount = 0 } = useQuery({
+    queryKey: ['notif-app-actions'],
+    queryFn: notificationApi.applicationActionCount,
+    enabled: isCommercial,
+    refetchInterval: 60000,
+  });
+
+  const { data: unstartedQuizzes = 0 } = useQuery({
+    queryKey: ['notif-unstarted-q'],
+    queryFn: notificationApi.unstartedQuizzesCount,
+    enabled: isCommercial,
+    refetchInterval: 60000,
+  });
+
+  // ── Entreprise notification counts (60s polling) ──────────────────────────
+  const { data: pendingApps = 0 } = useQuery({
+    queryKey: ['notif-pending-apps'],
+    queryFn: notificationApi.pendingApplicationsCount,
+    enabled: isEntreprise,
+    refetchInterval: 60000,
+  });
+
+  const { data: unreviewedSubs = 0 } = useQuery({
+    queryKey: ['notif-unreviewed-q'],
+    queryFn: notificationApi.unreviewedSubmissionsCount,
+    enabled: isEntreprise,
+    refetchInterval: 60000,
   });
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
-
-  const isCommercial = user?.client_type === 'commercial';
-  const isEntreprise = user?.client_type === 'entreprise';
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-950">
@@ -71,45 +129,27 @@ export default function ClientLayout() {
           {isCommercial && (
             <>
               <div className="pt-3 pb-1 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Career</div>
-              <NavItem to="/client/profile" icon={User} label="My Profile" end />
-              <NavItem to="/client/job-offers" icon={Briefcase} label="Job Offers" end />
-              <NavItem to="/client/my-applications" icon={ClipboardList} label="My Applications" end />
-              <NavItem to="/client/missions" icon={Rocket} label="My Missions" end />
-              <NavItem to="/client/quizzes" icon={BookOpen} label="My Quizzes" end />
+              <NavItem to="/client/profile"          icon={User}          label="My Profile"       end />
+              <NavItem to="/client/job-offers"       icon={Briefcase}     label="Job Offers"       end badge={newOffersCount} />
+              <NavItem to="/client/my-applications"  icon={ClipboardList} label="My Applications"  end badge={appActionCount} />
+              <NavItem to="/client/missions"         icon={Rocket}        label="My Missions"      end />
+              <NavItem to="/client/quizzes"          icon={BookOpen}      label="My Quizzes"       end badge={unstartedQuizzes} />
             </>
           )}
 
           {isEntreprise && (
             <>
               <div className="pt-3 pb-1 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Manage</div>
-              <NavItem to="/client/company-profile" icon={Building2} label="Company Profile" end />
-              <NavItem to="/client/job-offers" icon={Briefcase} label="Job Offers" end />
-              <NavItem to="/client/job-offers/create" icon={PlusCircle} label="Post Job" end />
-              <NavItem to="/client/quizzes" icon={BookOpen} label="Quizzes" end />
-              <NavItem to="/client/talent" icon={TrendingUp} label="Find Talent" end />
+              <NavItem to="/client/company-profile"  icon={Building2}     label="Company Profile"  end />
+              <NavItem to="/client/job-offers"       icon={Briefcase}     label="Job Offers"       end badge={pendingApps} />
+              <NavItem to="/client/job-offers/create" icon={PlusCircle}   label="Post Job"         end />
+              <NavItem to="/client/quizzes"          icon={BookOpen}      label="Quizzes"          end badge={unreviewedSubs} />
+              <NavItem to="/client/talent"           icon={TrendingUp}    label="Find Talent"      end />
             </>
           )}
 
           <div className="pt-3 pb-1 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Messaging</div>
-          <NavLink
-            to="/client/messages"
-            end
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-              }`
-            }
-          >
-            <MessageCircle size={18} />
-            Messages
-            {(unreadCount ?? 0) > 0 && (
-              <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-white text-xs font-bold">
-                {unreadCount}
-              </span>
-            )}
-          </NavLink>
+          <NavItem to="/client/messages" icon={MessageCircle} label="Messages" end badge={unreadCount} />
         </nav>
 
         {/* User info + actions */}

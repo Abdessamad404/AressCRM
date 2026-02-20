@@ -437,4 +437,36 @@ class QuizController extends Controller
 
         return response()->json($submissions);
     }
+
+    // ─── Notification badge counts ────────────────────────────────────────────
+
+    /**
+     * GET /api/client/quizzes/unstarted-count
+     * Commercial: count of assigned quizzes with no submission yet (notification badge).
+     */
+    public function unstartedCount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $count = QuizAssignment::whereHas('application', fn ($q) =>
+            $q->where('user_id', $user->id)
+        )->whereDoesntHave('quiz.submissions', fn ($q) =>
+            $q->where('user_id', $user->id)
+        )->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+    /**
+     * GET /api/client/quizzes/unreviewed-count
+     * Entreprise: count of quiz submissions with status 'submitted' awaiting review (notification badge).
+     */
+    public function unreviewedCount(Request $request): JsonResponse
+    {
+        $count = QuizSubmission::whereHas('quiz', fn ($q) =>
+            $q->where('created_by_id', $request->user()->id)
+        )->where('status', 'submitted')->count();
+
+        return response()->json(['count' => $count]);
+    }
 }

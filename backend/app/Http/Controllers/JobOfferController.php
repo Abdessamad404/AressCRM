@@ -167,6 +167,32 @@ class JobOfferController extends Controller
     }
 
     /**
+     * GET /api/client/job-offers/new-count
+     * Commercial: count of published offers created in the last 7 days (notification badge)
+     */
+    public function newCount(Request $request): JsonResponse
+    {
+        $count = JobOffer::where('status', 'published')
+            ->where('created_at', '>=', now()->subDays(7))
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+    /**
+     * GET /api/client/job-offers/pending-applications-count
+     * Entreprise: count of pending (unreviewed) applications across all their offers (notification badge)
+     */
+    public function pendingApplicationsCount(Request $request): JsonResponse
+    {
+        $count = Application::whereHas('jobOffer', fn ($q) =>
+            $q->where('user_id', $request->user()->id)
+        )->where('status', 'pending')->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+    /**
      * DELETE /api/client/job-offers/{jobOffer}
      * Delete a job offer (owner only)
      */

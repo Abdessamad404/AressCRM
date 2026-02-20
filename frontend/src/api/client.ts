@@ -176,6 +176,36 @@ export const applicationApi = {
   },
 };
 
+// ─── Notification counts API ─────────────────────────────────────────────────
+
+export const notificationApi = {
+  // Commercial: # of published offers created in the last 7 days
+  newJobOffersCount: async (): Promise<number> => {
+    const res = await api.get('/api/client/job-offers/new-count');
+    return res.data.count;
+  },
+  // Commercial: # of their applications with a non-pending status (shortlisted/accepted/rejected)
+  applicationActionCount: async (): Promise<number> => {
+    const res = await api.get('/api/client/my-applications/action-count');
+    return res.data.count;
+  },
+  // Commercial: # of assigned quizzes with no submission yet
+  unstartedQuizzesCount: async (): Promise<number> => {
+    const res = await api.get('/api/client/quizzes/unstarted-count');
+    return res.data.count;
+  },
+  // Entreprise: # of pending (unreviewed) applications across all their offers
+  pendingApplicationsCount: async (): Promise<number> => {
+    const res = await api.get('/api/client/job-offers/pending-applications-count');
+    return res.data.count;
+  },
+  // Entreprise: # of quiz submissions with status 'submitted' (not yet reviewed)
+  unreviewedSubmissionsCount: async (): Promise<number> => {
+    const res = await api.get('/api/client/quizzes/unreviewed-count');
+    return res.data.count;
+  },
+};
+
 // ─── Quiz Assignment API ──────────────────────────────────────────────────────
 
 export const quizAssignmentApi = {

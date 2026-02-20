@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { quizApi } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
@@ -152,6 +152,7 @@ export default function QuizTake() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const isCommercial = user?.client_type === 'commercial';
 
   // Optional "came from offer" context passed via Link state
@@ -200,6 +201,10 @@ export default function QuizTake() {
     onSuccess: (data) => {
       if (id) clearProgress(id);
       setResult(data);
+      // Notify entreprise badge: a new submission needs reviewing
+      queryClient.invalidateQueries({ queryKey: ['notif-unreviewed-q'] });
+      // Remove from commercial's unstarted count
+      queryClient.invalidateQueries({ queryKey: ['notif-unstarted-q'] });
     },
   });
 

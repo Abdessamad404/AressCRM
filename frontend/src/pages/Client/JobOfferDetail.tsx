@@ -66,6 +66,8 @@ export default function JobOfferDetail() {
       queryClient.invalidateQueries({ queryKey: ['client-job-offer-detail', id] });
       queryClient.invalidateQueries({ queryKey: ['client-job-offers'] });
       queryClient.invalidateQueries({ queryKey: ['my-applications'] });
+      // Update entreprise's pending-applications badge immediately
+      queryClient.invalidateQueries({ queryKey: ['notif-pending-apps'] });
       setCoverLetter('');
       setShowCoverLetter(false);
     },
@@ -74,7 +76,13 @@ export default function JobOfferDetail() {
   const updateStatusMutation = useMutation({
     mutationFn: ({ appId, status }: { appId: string; status: string }) =>
       applicationApi.updateStatus(id!, appId, { status }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['job-offer-applications', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job-offer-applications', id] });
+      // Update commercial's My Applications badge immediately (non-pending status changed)
+      queryClient.invalidateQueries({ queryKey: ['notif-app-actions'] });
+      // Update entreprise's pending-applications badge (count may decrease)
+      queryClient.invalidateQueries({ queryKey: ['notif-pending-apps'] });
+    },
   });
 
   if (isLoading) return (
@@ -332,6 +340,8 @@ function ApplicationRow({ application, myQuizzes, onStatusChange, isUpdating }: 
       queryClient.invalidateQueries({ queryKey: ['quiz-assignments', application.id] });
       // Invalidate candidate's quiz list so it refreshes next time they visit /client/quizzes
       queryClient.invalidateQueries({ queryKey: ['client-quizzes'] });
+      // Update commercial's My Quizzes badge immediately (new unstarted quiz assigned)
+      queryClient.invalidateQueries({ queryKey: ['notif-unstarted-q'] });
       setSelectedQuizId('');
       setShowAssignPicker(false);
     },

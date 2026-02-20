@@ -106,4 +106,18 @@ class ApplicationController extends Controller
 
         return response()->json($applications);
     }
+
+    /**
+     * GET /api/client/my-applications/action-count
+     * Commercial: count of their applications that have a non-pending status (notification badge).
+     * "Non-pending" = the entreprise has responded (shortlisted / accepted / rejected).
+     */
+    public function actionCount(Request $request): JsonResponse
+    {
+        $count = Application::where('user_id', $request->user()->id)
+            ->whereIn('status', ['shortlisted', 'accepted', 'rejected'])
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
 }

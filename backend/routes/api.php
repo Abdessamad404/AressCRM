@@ -74,6 +74,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/profiles', [ProfileController::class, 'index']);
         Route::get('/profiles/{profile}', [ProfileController::class, 'showPublic']);
 
+        // Job offer notification counts (must be before /{jobOffer} parameterized routes)
+        Route::get('/job-offers/new-count', [JobOfferController::class, 'newCount']);
+        Route::get('/job-offers/pending-applications-count', [JobOfferController::class, 'pendingApplicationsCount']);
+
         // Job offers
         Route::get('/job-offers', [JobOfferController::class, 'index']);
         Route::post('/job-offers', [JobOfferController::class, 'store']);
@@ -87,11 +91,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/job-offers/{jobOffer}/applications', [ApplicationController::class, 'index']);
         Route::patch('/job-offers/{jobOffer}/applications/{application}', [ApplicationController::class, 'update']);
         Route::get('/my-applications', [ApplicationController::class, 'myApplications']);
+        Route::get('/my-applications/action-count', [ApplicationController::class, 'actionCount']);
 
         // Quiz assignments (entreprise assigns quizzes to specific applicants)
         Route::get('/applications/{application}/quiz-assignments', [QuizAssignmentController::class, 'listForApplication']);
         Route::post('/applications/{application}/quiz-assignments', [QuizAssignmentController::class, 'assign']);
         Route::delete('/applications/{application}/quiz-assignments/{assignment}', [QuizAssignmentController::class, 'unassign']);
+
+        // Quiz notification counts (must be before /{quiz} parameterized routes)
+        Route::get('/quizzes/unstarted-count', [QuizController::class, 'unstartedCount']);
+        Route::get('/quizzes/unreviewed-count', [QuizController::class, 'unreviewedCount']);
 
         // Quizzes
         Route::get('/quizzes', [QuizController::class, 'index']);
