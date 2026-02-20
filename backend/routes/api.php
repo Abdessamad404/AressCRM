@@ -14,6 +14,7 @@ use App\Http\Controllers\QuizController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\QuizAssignmentController;
+use App\Http\Controllers\DevSeedController;
 
 // Health check (Render uses this to know the container is ready)
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
@@ -58,6 +59,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/{user}', [UserController::class, 'show']);
         Route::put('/users/{user}', [UserController::class, 'update']);
         Route::get('/users/{user}/progress', [UserController::class, 'progress']);
+
+        // Dev/demo seed — wipes content and recreates realistic demo data (admin only)
+        Route::post('/dev/seed', [DevSeedController::class, 'seed']);
     });
 
     // Theme preference (any user)
