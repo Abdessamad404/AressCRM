@@ -25,6 +25,9 @@ Route::get('/dev/seed', [DevSeedController::class, 'seed']);
 // Dev wipe — nukes all content, keeps users only
 Route::get('/dev/wipe', [DevSeedController::class, 'wipe']);
 
+// Dev nuke — wipes everything including users, re-seeds 3 base users only
+Route::get('/dev/nuke', [DevSeedController::class, 'nuke']);
+
 // Auth routes (guest)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);

@@ -3,7 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Application;
+use App\Models\Bug;
+use App\Models\BugHistory;
 use App\Models\JobOffer;
+use App\Models\Lead;
+use App\Models\LeadHistory;
+use App\Models\Message;
+use App\Models\Profile;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use App\Models\QuizQuestion;
@@ -12,6 +18,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * Dev/Demo seed endpoint — admin-only, safe to deploy to production.
@@ -286,6 +293,61 @@ class DevSeedController extends Controller
         } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * GET /api/dev/nuke — full nuclear wipe + re-seed 3 base users only.
+     * Deletes every table (users included) in FK-safe order, then creates
+     * admin@aress.com, hr@technova.com, karim.b@mail.com.
+     */
+    public function nuke(): JsonResponse
+    {
+        // FK-safe deletion order: dependents first, roots last
+        QuizAssignment::query()->delete();
+        QuizQuestion::query()->delete();
+        QuizSubmission::query()->delete();
+        BugHistory::query()->delete();
+        LeadHistory::query()->delete();
+        Message::query()->delete();
+        Application::query()->delete();
+        Quiz::query()->delete();
+        Profile::query()->delete();
+        Bug::query()->delete();
+        Lead::query()->delete();
+        JobOffer::query()->delete();
+        PersonalAccessToken::query()->delete(); // invalidate all sessions
+        User::query()->delete();
+
+        // Re-create the 3 base users (firstOrCreate is safe if called twice)
+        User::firstOrCreate(['email' => 'admin@aress.com'], [
+            'name'             => 'Admin User',
+            'password'         => 'password',
+            'role'             => 'admin',
+            'theme_preference' => 'system',
+        ]);
+        User::firstOrCreate(['email' => 'hr@technova.com'], [
+            'name'             => 'TechNova HR',
+            'password'         => 'password',
+            'role'             => 'user',
+            'client_type'      => 'entreprise',
+            'company'          => 'TechNova',
+            'phone'            => '+1-555-0201',
+            'theme_preference' => 'system',
+        ]);
+        User::firstOrCreate(['email' => 'karim.b@mail.com'], [
+            'name'             => 'Karim Bensalem',
+            'password'         => 'password',
+            'role'             => 'user',
+            'client_type'      => 'commercial',
+            'company'          => 'Freelance',
+            'phone'            => '+213-555-0301',
+            'theme_preference' => 'system',
+        ]);
+
+        return response()->json([
+            'message' => 'Nuked. Fresh start.',
+            'users'   => User::select('id', 'name', 'email', 'role', 'client_type')->get(),
+        ]);
     }
 
     /**
