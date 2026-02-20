@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { jobOfferApi } from '../../api/client';
-import { Plus, Trash2, Loader2, ArrowLeft, Upload, X, FileText } from 'lucide-react';
+import { Plus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
 
 const schema = z.object({
   title:             z.string().min(1, 'Title is required'),
@@ -30,8 +30,6 @@ export default function JobOfferForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [productSheetFile, setProductSheetFile] = useState<File | null>(null);
 
   const { data: existing } = useQuery({
     queryKey: ['client-job-offer', id],
@@ -71,40 +69,33 @@ export default function JobOfferForm() {
 
   const mutation = useMutation({
     mutationFn: (data: FormData) => {
-      // Build FormData for multipart upload
-      const fd = new FormData();
-      fd.append('title',             data.title);
-      fd.append('description',       data.description);
-      fd.append('company_name',      data.company_name);
-      fd.append('compensation_type', data.compensation_type);
-      fd.append('status',            data.status);
-      if (data.location)          fd.append('location',          data.location);
-      if (data.sector)            fd.append('sector',            data.sector);
-      if (data.mission_type)      fd.append('mission_type',      data.mission_type);
-      if (data.contract_duration) fd.append('contract_duration', data.contract_duration);
-      if (data.compensation_type === 'commission' && data.commission_rate !== '') {
-        fd.append('commission_rate', String(data.commission_rate));
-      }
-      if (data.compensation_type === 'fixed_budget' && data.budget_amount !== '') {
-        fd.append('budget_amount', String(data.budget_amount));
-      }
-      (data.requirements ?? []).forEach((r, i) => r.value && fd.append(`requirements[${i}]`, r.value));
-      (data.benefits ?? []).forEach((b, i) => b.value && fd.append(`benefits[${i}]`, b.value));
-      if (productSheetFile) fd.append('product_sheet', productSheetFile);
+      const payload: Record<string, any> = {
+        title:             data.title,
+        description:       data.description,
+        company_name:      data.company_name,
+        compensation_type: data.compensation_type,
+        status:            data.status,
+        requirements:      (data.requirements ?? []).filter(r => r.value).map(r => r.value),
+        benefits:          (data.benefits ?? []).filter(b => b.value).map(b => b.value),
+      };
+      if (data.location)          payload.location          = data.location;
+      if (data.sector)            payload.sector            = data.sector;
+      if (data.mission_type)      payload.mission_type      = data.mission_type;
+      if (data.contract_duration) payload.contract_duration = data.contract_duration;
+      if (data.compensation_type === 'commission' && data.commission_rate !== '')
+        payload.commission_rate = data.commission_rate;
+      if (data.compensation_type === 'fixed_budget' && data.budget_amount !== '')
+        payload.budget_amount = data.budget_amount;
 
-      if (isEdit) {
-        fd.append('_method', 'PUT');
-        return jobOfferApi.updateMultipart(id!, fd);
-      }
-      return jobOfferApi.createMultipart(fd);
+      return isEdit
+        ? jobOfferApi.update(id!, payload)
+        : jobOfferApi.create(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-job-offers'] });
       navigate('/client/job-offers');
     },
   });
-
-  const onSubmit = ((data: unknown) => mutation.mutateAsync(data as FormData).catch(() => {})) as unknown as (data: FormData) => void;
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
@@ -116,7 +107,7 @@ export default function JobOfferForm() {
         {isEdit ? 'Edit Job Offer' : 'Post a Job Offer'}
       </h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit((data) => mutation.mutate(data as any))} className="space-y-5">
         {/* Basic info */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Basic Information</h2>
@@ -149,40 +140,6 @@ export default function JobOfferForm() {
               </datalist>
             </FormField>
           </div>
-
-          {/* Product sheet upload */}
-          <FormField label="Product Sheet (PDF, DOCX, image — max 10MB)">
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              className="hidden"
-              onChange={(e) => setProductSheetFile(e.target.files?.[0] ?? null)}
-            />
-            {productSheetFile ? (
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm">
-                <FileText size={15} className="text-primary-500 flex-shrink-0" />
-                <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{productSheetFile.name}</span>
-                <button type="button" onClick={() => { setProductSheetFile(null); if (fileRef.current) fileRef.current.value = ''; }} className="text-gray-400 hover:text-red-500 transition-colors">
-                  <X size={14} />
-                </button>
-              </div>
-            ) : existing?.product_sheet_name ? (
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm">
-                <FileText size={15} className="text-primary-500 flex-shrink-0" />
-                <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{existing.product_sheet_name}</span>
-                <button type="button" onClick={() => fileRef.current?.click()} className="text-xs text-primary-600 hover:underline">Replace</button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 transition-colors"
-              >
-                <Upload size={15} /> Upload product sheet
-              </button>
-            )}
-          </FormField>
         </div>
 
         {/* Commercial terms */}
@@ -300,8 +257,8 @@ export default function JobOfferForm() {
           <button type="button" onClick={() => navigate(-1)} className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             Cancel
           </button>
-          <button type="submit" disabled={isSubmitting} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors">
-            {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Saving...</> : (isEdit ? 'Update Offer' : 'Post Offer')}
+          <button type="submit" disabled={isSubmitting || mutation.isPending} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors">
+            {(isSubmitting || mutation.isPending) ? <><Loader2 size={16} className="animate-spin" /> Saving...</> : (isEdit ? 'Update Offer' : 'Post Offer')}
           </button>
         </div>
       </form>

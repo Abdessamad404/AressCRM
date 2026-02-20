@@ -6,7 +6,6 @@ use App\Models\Application;
 use App\Models\JobOffer;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
 
 class JobOfferController extends Controller
 {
@@ -93,7 +92,7 @@ class JobOfferController extends Controller
 
     /**
      * POST /api/client/job-offers
-     * Create a new job offer (entreprise only) — multipart/form-data for product sheet
+     * Create a new job offer (entreprise only)
      */
     public function store(Request $request): JsonResponse
     {
@@ -119,7 +118,6 @@ class JobOfferController extends Controller
             'benefits'          => 'nullable|array',
             'benefits.*'        => 'string',
             'status'            => 'nullable|in:draft,published,closed',
-            'product_sheet'     => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
         ]);
 
         $data = array_merge($validated, [
@@ -128,23 +126,13 @@ class JobOfferController extends Controller
             'compensation_type' => $validated['compensation_type'] ?? 'commission',
         ]);
 
-        // Handle product sheet upload
-        if ($request->hasFile('product_sheet')) {
-            $file = $request->file('product_sheet');
-            $path = $file->store('product_sheets', 'public');
-            $data['product_sheet_path'] = $path;
-            $data['product_sheet_name'] = $file->getClientOriginalName();
-        }
-
-        unset($data['product_sheet']);
-
         $offer = JobOffer::create($data);
 
         return response()->json(['data' => $offer], 201);
     }
 
     /**
-     * POST /api/client/job-offers/{jobOffer} (with _method=PUT for multipart)
+     * PUT /api/client/job-offers/{jobOffer}
      * Update a job offer (owner entreprise only)
      */
     public function update(Request $request, JobOffer $jobOffer): JsonResponse
@@ -171,23 +159,9 @@ class JobOfferController extends Controller
             'benefits'          => 'nullable|array',
             'benefits.*'        => 'string',
             'status'            => 'nullable|in:draft,published,closed',
-            'product_sheet'     => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
         ]);
 
-        $data = $validated;
-
-        if ($request->hasFile('product_sheet')) {
-            // Delete old file if exists
-            if ($jobOffer->product_sheet_path) {
-                Storage::disk('public')->delete($jobOffer->product_sheet_path);
-            }
-            $file = $request->file('product_sheet');
-            $data['product_sheet_path'] = $file->store('product_sheets', 'public');
-            $data['product_sheet_name'] = $file->getClientOriginalName();
-        }
-
-        unset($data['product_sheet']);
-        $jobOffer->update($data);
+        $jobOffer->update($validated);
 
         return response()->json(['data' => $jobOffer]);
     }
@@ -200,11 +174,6 @@ class JobOfferController extends Controller
     {
         if ($jobOffer->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Forbidden.'], 403);
-        }
-
-        // Clean up product sheet
-        if ($jobOffer->product_sheet_path) {
-            Storage::disk('public')->delete($jobOffer->product_sheet_path);
         }
 
         $jobOffer->delete();
