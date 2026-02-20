@@ -22,6 +22,9 @@ Route::get('/health', fn () => response()->json(['status' => 'ok']));
 // Dev seed — no auth required, same pattern as /health (wipes content, reseeds demo data)
 Route::get('/dev/seed', [DevSeedController::class, 'seed']);
 
+// Dev wipe — nukes all content, keeps users only
+Route::get('/dev/wipe', [DevSeedController::class, 'wipe']);
+
 // Auth routes (guest)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);

@@ -268,6 +268,23 @@ class DevSeedController extends Controller
     }
 
     /**
+     * GET /api/dev/wipe — nuke all content, keep users only. Fresh start.
+     */
+    public function wipe(): JsonResponse
+    {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        QuizAssignment::truncate();
+        QuizSubmission::truncate();
+        Application::truncate();
+        QuizQuestion::truncate();
+        Quiz::truncate();
+        JobOffer::truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+        return response()->json(['message' => 'Wiped. Users intact, everything else gone.']);
+    }
+
+    /**
      * Generate a short personalised cover letter for seeded applications.
      */
     private function coverLetter(string $name): string
