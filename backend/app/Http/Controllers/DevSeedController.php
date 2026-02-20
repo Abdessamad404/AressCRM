@@ -35,15 +35,13 @@ class DevSeedController extends Controller
             ], 422);
         }
 
-        // ── 2. Wipe existing content (cascade order matters) ─────────────────
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        QuizAssignment::truncate();
-        QuizSubmission::truncate();
-        Application::truncate();
-        QuizQuestion::truncate();
-        Quiz::truncate();
-        JobOffer::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        // ── 2. Wipe existing content (DELETE works on both SQLite and MySQL) ──
+        QuizAssignment::query()->delete();
+        QuizSubmission::query()->delete();
+        Application::query()->delete();
+        QuizQuestion::query()->delete();
+        Quiz::query()->delete();
+        JobOffer::query()->delete();
 
         // ── 3. Job offer templates (2 per entreprise) ────────────────────────
         $offerTemplates = [
@@ -272,14 +270,13 @@ class DevSeedController extends Controller
      */
     public function wipe(): JsonResponse
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        QuizAssignment::truncate();
-        QuizSubmission::truncate();
-        Application::truncate();
-        QuizQuestion::truncate();
-        Quiz::truncate();
-        JobOffer::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        // Use DELETE (not TRUNCATE) — works on both SQLite (local) and MySQL (production)
+        QuizAssignment::query()->delete();
+        QuizSubmission::query()->delete();
+        Application::query()->delete();
+        QuizQuestion::query()->delete();
+        Quiz::query()->delete();
+        JobOffer::query()->delete();
 
         return response()->json(['message' => 'Wiped. Users intact, everything else gone.']);
     }
