@@ -60,20 +60,21 @@ if (!\$admin) {
 }
 "
 
-# Clear & rebuild caches for production
-echo "==> Optimising..."
-php artisan config:cache
-php artisan route:cache
-
-# Ensure upload directories exist (store() will create subdirs but needs the disk root writable)
+# Ensure upload directories exist BEFORE config:cache bakes the filesystem config.
+# opcache.validate_timestamps=0 means cached config is never re-read — order matters.
 mkdir -p storage/app/public/avatars \
          storage/app/public/logos \
          storage/app/public/temp
 
-# Re-create the public/storage symlink (survives across restarts, safe to re-run)
+# Re-create the public/storage symlink (--force removes any stale symlink first)
 php artisan storage:link --force 2>/dev/null || true
 
-# Fix storage permissions
+# Clear & rebuild caches for production (runs AFTER storage dirs exist)
+echo "==> Optimising..."
+php artisan config:cache
+php artisan route:cache
+
+# Fix storage permissions (after all dirs exist)
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 echo "==> Starting services..."
