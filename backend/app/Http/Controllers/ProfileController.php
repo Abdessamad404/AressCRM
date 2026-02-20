@@ -31,6 +31,24 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        // Debug: log what PHP sees about the uploaded file
+        \Illuminate\Support\Facades\Log::info('Profile upsert called', [
+            'has_avatar'    => $request->hasFile('avatar'),
+            'has_logo'      => $request->hasFile('logo'),
+            'content_type'  => $request->header('Content-Type'),
+            'files'         => array_keys($request->allFiles()),
+            'is_commercial' => $user->isCommercial(),
+            'is_entreprise' => $user->isEntreprise(),
+            'storage_root'  => storage_path('app/public'),
+            'storage_writable' => is_writable(storage_path('app/public')),
+            'avatars_exists' => file_exists(storage_path('app/public/avatars')),
+            'avatars_writable' => is_writable(storage_path('app/public/avatars')),
+            'symlink_exists' => file_exists(public_path('storage')),
+            'symlink_is_link' => is_link(public_path('storage')),
+        ]);
+
+        try {
+
         if ($user->isCommercial()) {
             $validated = $request->validate([
                 'title'            => 'nullable|string|max:255',
@@ -101,6 +119,20 @@ class ProfileController extends Controller
         );
 
         return response()->json(['data' => $profile], 200);
+
+        } catch (\Throwable $e) {
+            // Temporary debug: return the real exception so we can see what's failing
+            return response()->json([
+                'error'   => get_class($e),
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => array_slice(
+                    array_map(fn($f) => ($f['file'] ?? '?') . ':' . ($f['line'] ?? '?'), $e->getTrace()),
+                    0, 5
+                ),
+            ], 500);
+        }
     }
 
     /**

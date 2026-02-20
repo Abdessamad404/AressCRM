@@ -60,7 +60,7 @@ services:
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL
-        value: error
+        value: debug
       - key: FRONTEND_URL
         value: https://aresscrm-frontend.onrender.com
       - key: SANCTUM_STATEFUL_DOMAINS
