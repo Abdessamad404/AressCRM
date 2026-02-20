@@ -13,9 +13,7 @@ import { messageApi, notificationApi } from '../../api/client';
 function Badge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[1rem] px-0.5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none ring-2 ring-white dark:ring-gray-900 pointer-events-none">
-      {count > 9 ? '9+' : count}
-    </span>
+    <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900 pointer-events-none" />
   );
 }
 

@@ -19,6 +19,9 @@ use App\Http\Controllers\DevSeedController;
 // Health check (Render uses this to know the container is ready)
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
 
+// Dev seed — no auth required, same pattern as /health (wipes content, reseeds demo data)
+Route::get('/dev/seed', [DevSeedController::class, 'seed']);
+
 // Auth routes (guest)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);

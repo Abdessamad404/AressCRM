@@ -81,8 +81,7 @@ class ProfileController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Profile::with('user')
-            ->where('is_published', true);
+        $query = Profile::with('user');
 
         if ($request->filled('sector')) {
             $query->where('sectors', 'like', '%' . $request->sector . '%');
