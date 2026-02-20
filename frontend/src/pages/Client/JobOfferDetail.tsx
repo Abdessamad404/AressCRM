@@ -330,6 +330,8 @@ function ApplicationRow({ application, myQuizzes, onStatusChange, isUpdating }: 
     mutationFn: (quizId: string) => quizAssignmentApi.assign(application.id, quizId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quiz-assignments', application.id] });
+      // Invalidate candidate's quiz list so it refreshes next time they visit /client/quizzes
+      queryClient.invalidateQueries({ queryKey: ['client-quizzes'] });
       setSelectedQuizId('');
       setShowAssignPicker(false);
     },
@@ -339,6 +341,8 @@ function ApplicationRow({ application, myQuizzes, onStatusChange, isUpdating }: 
     mutationFn: (assignmentId: string) => quizAssignmentApi.unassign(application.id, assignmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quiz-assignments', application.id] });
+      // Invalidate candidate's quiz list so removal is reflected next time they visit
+      queryClient.invalidateQueries({ queryKey: ['client-quizzes'] });
     },
   });
 

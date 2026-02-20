@@ -19,6 +19,7 @@ export default function QuizzesPage() {
     queryKey: ['client-quizzes', page],
     queryFn: () => quizApi.list({ page }),
     placeholderData: (prev) => prev,
+    staleTime: 0, // always re-fetch on mount so new assignments appear without a hard refresh
   });
 
   const deleteMutation = useMutation({
