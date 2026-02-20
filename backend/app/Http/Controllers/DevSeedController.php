@@ -25,6 +25,7 @@ class DevSeedController extends Controller
 {
     public function seed(Request $request): JsonResponse
     {
+        try {
         // ── 1. Resolve seeded users ───────────────────────────────────────────
         $entreprises = User::where('client_type', 'entreprise')->get();
         $commercials  = User::where('client_type', 'commercial')->get();
@@ -263,6 +264,9 @@ class DevSeedController extends Controller
                 'quiz_assignments_created' => $assignCount,
             ],
         ]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
