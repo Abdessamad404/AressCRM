@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Quiz;
+use App\Models\QuizAssignment;
 use App\Models\QuizQuestion;
 use App\Models\QuizSubmission;
 use Illuminate\Http\Request;
@@ -28,7 +29,13 @@ class QuizController extends Controller
                 ->orderByDesc('created_at')
                 ->paginate(12);
         } else {
-            $quizzes = Quiz::with('jobOffer')
+            // Commercial: only show quizzes explicitly assigned to them
+            $assignedQuizIds = QuizAssignment::whereHas('application', fn ($q) =>
+                $q->where('user_id', $user->id)
+            )->pluck('quiz_id');
+
+            $quizzes = Quiz::with(['jobOffer'])
+                ->whereIn('id', $assignedQuizIds)
                 ->where('is_published', true)
                 ->orderByDesc('created_at')
                 ->paginate(12);
@@ -44,8 +51,20 @@ class QuizController extends Controller
     {
         $user = $request->user();
 
+        // Unpublished quizzes: only the owner can see them
         if (!$quiz->is_published && $quiz->created_by_id !== $user->id) {
             return response()->json(['message' => 'Quiz not found.'], 404);
+        }
+
+        // Commercials can only access quizzes explicitly assigned to them
+        if ($user->isCommercial()) {
+            $hasAssignment = QuizAssignment::whereHas('application', fn ($q) =>
+                $q->where('user_id', $user->id)
+            )->where('quiz_id', $quiz->id)->exists();
+
+            if (!$hasAssignment) {
+                return response()->json(['message' => 'Quiz not found.'], 404);
+            }
         }
 
         $quiz->load(['questions', 'jobOffer', 'createdBy']);
@@ -234,6 +253,15 @@ class QuizController extends Controller
         }
 
         if (!$quiz->is_published) {
+            return response()->json(['message' => 'Quiz is not available.'], 403);
+        }
+
+        // Must have been explicitly assigned this quiz
+        $hasAssignment = QuizAssignment::whereHas('application', fn ($q) =>
+            $q->where('user_id', $user->id)
+        )->where('quiz_id', $quiz->id)->exists();
+
+        if (!$hasAssignment) {
             return response()->json(['message' => 'Quiz is not available.'], 403);
         }
 

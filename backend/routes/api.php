@@ -13,6 +13,7 @@ use App\Http\Controllers\JobOfferController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\QuizAssignmentController;
 
 // Health check (Render uses this to know the container is ready)
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
@@ -86,6 +87,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/job-offers/{jobOffer}/applications', [ApplicationController::class, 'index']);
         Route::patch('/job-offers/{jobOffer}/applications/{application}', [ApplicationController::class, 'update']);
         Route::get('/my-applications', [ApplicationController::class, 'myApplications']);
+
+        // Quiz assignments (entreprise assigns quizzes to specific applicants)
+        Route::get('/applications/{application}/quiz-assignments', [QuizAssignmentController::class, 'listForApplication']);
+        Route::post('/applications/{application}/quiz-assignments', [QuizAssignmentController::class, 'assign']);
+        Route::delete('/applications/{application}/quiz-assignments/{assignment}', [QuizAssignmentController::class, 'unassign']);
 
         // Quizzes
         Route::get('/quizzes', [QuizController::class, 'index']);

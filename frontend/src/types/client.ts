@@ -59,6 +59,22 @@ export interface JobOffer {
   quizzes?: { id: string; title: string; description: string | null; time_limit_minutes: number | null }[];
 }
 
+// ─── Quiz Assignment ──────────────────────────────────────────────────────────
+export interface QuizAssignment {
+  id: string;
+  quiz_id: string;
+  application_id: string;
+  assigned_by_id: string;
+  assigned_at: string;
+  quiz?: {
+    id: string;
+    title: string;
+    description: string | null;
+    time_limit_minutes: number | null;
+    is_published: boolean;
+  };
+}
+
 // ─── Application ──────────────────────────────────────────────────────────────
 export interface Application {
   id: string;
@@ -71,6 +87,7 @@ export interface Application {
   updated_at: string;
   job_offer?: JobOffer;
   user?: { id: string; name: string; email: string };
+  quiz_assignments?: QuizAssignment[];
 }
 
 // ─── Quiz ─────────────────────────────────────────────────────────────────────

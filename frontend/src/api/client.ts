@@ -1,7 +1,7 @@
 import api from './axios';
 import type {
   Profile, JobOffer, Quiz, QuizQuestion, QuizSubmission, QuizSubmissionResult,
-  Message, Conversation, Application, Paginated
+  Message, Conversation, Application, QuizAssignment, Paginated
 } from '../types/client';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -173,6 +173,24 @@ export const applicationApi = {
   myApplications: async (params?: { status?: string; page?: number }): Promise<Paginated<Application>> => {
     const res = await api.get('/api/client/my-applications', { params });
     return flatPage<Application>(res.data);
+  },
+};
+
+// ─── Quiz Assignment API ──────────────────────────────────────────────────────
+
+export const quizAssignmentApi = {
+  list: async (applicationId: string): Promise<QuizAssignment[]> => {
+    const res = await api.get(`/api/client/applications/${applicationId}/quiz-assignments`);
+    return res.data.data;
+  },
+
+  assign: async (applicationId: string, quizId: string): Promise<QuizAssignment> => {
+    const res = await api.post(`/api/client/applications/${applicationId}/quiz-assignments`, { quiz_id: quizId });
+    return res.data.data;
+  },
+
+  unassign: async (applicationId: string, assignmentId: string): Promise<void> => {
+    await api.delete(`/api/client/applications/${applicationId}/quiz-assignments/${assignmentId}`);
   },
 };
 

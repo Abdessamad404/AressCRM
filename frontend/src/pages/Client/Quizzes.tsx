@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { quizApi, applicationApi } from '../../api/client';
+import { quizApi } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   BookOpen, Plus, Clock, CheckCircle,
@@ -26,13 +26,6 @@ export default function QuizzesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['client-quizzes'] }),
   });
 
-  // Commercial: fetch accepted missions to know which quizzes are relevant
-  const { data: missionsData } = useQuery({
-    queryKey: ['my-missions-for-quizzes'],
-    queryFn: () => applicationApi.myApplications({ status: 'accepted' }),
-    enabled: !isEntreprise,
-  });
-
   // Commercial: fetch own submissions to mark completed quizzes
   const { data: submissionsData } = useQuery({
     queryKey: ['my-submissions'],
@@ -41,11 +34,7 @@ export default function QuizzesPage() {
   });
 
   const submittedQuizIds = new Set((submissionsData?.data ?? []).map(s => s.quiz_id));
-  const missionOfferIds  = new Set((missionsData?.data ?? []).map(a => a.job_offer_id));
-
-  const allQuizzes     = data?.data ?? [];
-  const missionQuizzes = allQuizzes.filter(q => q.job_offer_id && missionOfferIds.has(q.job_offer_id));
-  const otherQuizzes   = allQuizzes.filter(q => !q.job_offer_id || !missionOfferIds.has(q.job_offer_id));
+  const allQuizzes = data?.data ?? [];
 
   const handleDelete = (id: string, title: string) => {
     if (window.confirm(`Delete quiz "${title}"?`)) deleteMutation.mutate(id);
@@ -56,12 +45,12 @@ export default function QuizzesPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isEntreprise ? 'My Quizzes' : 'Quizzes'}
+            {isEntreprise ? 'My Quizzes' : 'My Assessments'}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             {isEntreprise
-              ? 'Create quizzes to assess commercial candidates'
-              : 'Required assessments for your missions'}
+              ? 'Create and manage quizzes to assess candidates'
+              : 'Quizzes assigned to you by entreprises'}
           </p>
         </div>
         {isEntreprise && (
@@ -79,7 +68,7 @@ export default function QuizzesPage() {
           <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : isEntreprise ? (
-        /* ── Entreprise: full grid ── */
+        /* ── Entreprise: full grid of their own quizzes ── */
         allQuizzes.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <BookOpen size={40} className="mx-auto mb-3 opacity-40" />
@@ -96,47 +85,35 @@ export default function QuizzesPage() {
           </div>
         )
       ) : (
-        /* ── Commercial: mission quizzes first, others below ── */
-        <div className="space-y-8">
-          {missionQuizzes.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <Briefcase size={14} className="text-primary-500" />
-                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Your Mission Assessments</h2>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {missionQuizzes.map((quiz) => (
-                  <QuizCard key={quiz.id} quiz={quiz} isOwner={false} isCompleted={submittedQuizIds.has(quiz.id)} onDelete={() => {}} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {otherQuizzes.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <BookOpen size={14} className="text-gray-400" />
-                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400">Other Available Quizzes</h2>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {otherQuizzes.map((quiz) => (
-                  <QuizCard key={quiz.id} quiz={quiz} isOwner={false} isCompleted={submittedQuizIds.has(quiz.id)} onDelete={() => {}} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {allQuizzes.length === 0 && (
-            <div className="text-center py-16 text-gray-400">
-              <BookOpen size={40} className="mx-auto mb-3 opacity-40" />
-              <p className="font-medium">No quizzes yet</p>
-              <p className="text-sm mt-1">
-                Get accepted on a mission to see required assessments here.{' '}
-                <Link to="/client/job-offers" className="text-primary-600 dark:text-primary-400 hover:underline">Browse offers</Link>
-              </p>
+        /* ── Commercial: only quizzes explicitly assigned to them ── */
+        allQuizzes.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <BookOpen size={40} className="mx-auto mb-3 opacity-40" />
+            <p className="font-medium">No quizzes assigned yet</p>
+            <p className="text-sm mt-1 max-w-xs mx-auto">
+              Entreprises assign quizzes to candidates after reviewing applications.{' '}
+              <Link to="/client/job-offers" className="text-primary-600 dark:text-primary-400 hover:underline">Browse offers</Link>
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Briefcase size={14} className="text-primary-500" />
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Your Assigned Assessments</h2>
             </div>
-          )}
-        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {allQuizzes.map((quiz) => (
+                <QuizCard
+                  key={quiz.id}
+                  quiz={quiz}
+                  isOwner={false}
+                  isCompleted={submittedQuizIds.has(quiz.id)}
+                  onDelete={() => {}}
+                />
+              ))}
+            </div>
+          </div>
+        )
       )}
 
       {(data?.last_page ?? 1) > 1 && (

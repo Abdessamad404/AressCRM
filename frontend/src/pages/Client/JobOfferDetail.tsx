@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { jobOfferApi, applicationApi } from '../../api/client';
+import { jobOfferApi, applicationApi, quizApi, quizAssignmentApi } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   ArrowLeft, MapPin, TrendingUp, Clock, Eye, FileText,
   CheckCircle, Loader2, Users, Pencil, Download,
-  BookOpen, Send, ChevronDown, ChevronUp,
+  BookOpen, Send, ChevronDown, ChevronUp, ClipboardList,
+  X, Plus,
 } from 'lucide-react';
 import { formatRelativeTime } from '../../utils/helpers';
-import type { Application } from '../../types/client';
+import type { Application, QuizAssignment } from '../../types/client';
 
 const MISSION_LABELS: Record<string, string> = {
   direct_sales: 'Direct Sales', lead_gen: 'Lead Gen', demo: 'Demo', other: 'Other',
@@ -47,6 +48,14 @@ export default function JobOfferDetail() {
     queryKey: ['job-offer-applications', id],
     queryFn: () => applicationApi.getForOffer(id!),
     enabled: !!id && isEntreprise,
+  });
+
+  // Entreprise: fetch their own published quizzes for the assignment picker
+  const { data: myQuizzes = [] } = useQuery({
+    queryKey: ['client-quizzes-for-assign'],
+    queryFn: () => quizApi.list({ page: 1 }),
+    enabled: isEntreprise,
+    select: (d) => d.data.filter((q) => q.is_published),
   });
 
   const pendingCount = (applicationsData?.data ?? []).filter(a => a.status === 'pending').length;
@@ -265,41 +274,6 @@ export default function JobOfferDetail() {
               </ul>
             </div>
           )}
-
-          {/* Required Assessments */}
-          {(offer.quizzes ?? []).length > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
-              <h2 className="font-semibold text-gray-900 dark:text-white text-sm mb-4 flex items-center gap-2">
-                <BookOpen size={14} className="text-primary-500" /> Required Assessments
-              </h2>
-              <div className="space-y-2">
-                {(offer.quizzes ?? []).map((q) => (
-                  <div key={q.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{q.title}</p>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        {q.description && <p className="text-xs text-gray-400 truncate max-w-[200px]">{q.description}</p>}
-                        {q.time_limit_minutes && (
-                          <span className="text-xs text-gray-400 flex items-center gap-1 shrink-0">
-                            <Clock size={10} /> {q.time_limit_minutes} min
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {isCommercial && (
-                      <Link
-                        to={`/client/quizzes/${q.id}`}
-                        state={{ fromOfferId: offer.id, fromOfferTitle: offer.title }}
-                        className="ml-4 shrink-0 text-xs px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
-                      >
-                        Take Quiz
-                      </Link>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -321,6 +295,7 @@ export default function JobOfferDetail() {
                 <ApplicationRow
                   key={app.id}
                   application={app}
+                  myQuizzes={myQuizzes}
                   onStatusChange={(status) => updateStatusMutation.mutate({ appId: app.id, status })}
                   isUpdating={updateStatusMutation.isPending}
                 />
@@ -333,15 +308,49 @@ export default function JobOfferDetail() {
   );
 }
 
-function ApplicationRow({ application, onStatusChange, isUpdating }: {
+// ─── ApplicationRow ────────────────────────────────────────────────────────────
+
+function ApplicationRow({ application, myQuizzes, onStatusChange, isUpdating }: {
   application: Application;
+  myQuizzes: { id: string; title: string }[];
   onStatusChange: (status: string) => void;
   isUpdating: boolean;
 }) {
+  const queryClient = useQueryClient();
+  const [showAssignPicker, setShowAssignPicker] = useState(false);
+  const [selectedQuizId, setSelectedQuizId] = useState('');
+
+  // Fetch assignments for this specific application
+  const { data: assignments = [], isLoading: assignmentsLoading } = useQuery<QuizAssignment[]>({
+    queryKey: ['quiz-assignments', application.id],
+    queryFn: () => quizAssignmentApi.list(application.id),
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: (quizId: string) => quizAssignmentApi.assign(application.id, quizId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quiz-assignments', application.id] });
+      setSelectedQuizId('');
+      setShowAssignPicker(false);
+    },
+  });
+
+  const unassignMutation = useMutation({
+    mutationFn: (assignmentId: string) => quizAssignmentApi.unassign(application.id, assignmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quiz-assignments', application.id] });
+    },
+  });
+
+  const assignedQuizIds = new Set(assignments.map((a) => a.quiz_id));
+  const availableQuizzes = myQuizzes.filter((q) => !assignedQuizIds.has(q.id));
+  const isRejected = application.status === 'rejected';
+
   const initials = (application.user?.name ?? '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4">
+      {/* Candidate info */}
       <div className="flex items-start gap-3">
         <div className="w-9 h-9 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-700 dark:text-primary-400 text-sm font-bold flex-shrink-0">
           {initials}
@@ -374,6 +383,98 @@ function ApplicationRow({ application, onStatusChange, isUpdating }: {
           <option value="accepted">→ Accept</option>
           <option value="rejected">→ Reject</option>
         </select>
+      </div>
+
+      {/* ── Quiz assignments section ── */}
+      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between mb-2">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+            <ClipboardList size={12} /> Assigned Quizzes
+          </span>
+          {!isRejected && myQuizzes.length > 0 && (
+            <button
+              onClick={() => setShowAssignPicker((v) => !v)}
+              disabled={availableQuizzes.length === 0}
+              title={availableQuizzes.length === 0 ? 'All your quizzes are already assigned' : 'Assign a quiz'}
+              className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Plus size={12} /> Assign Quiz
+            </button>
+          )}
+        </div>
+
+        {/* Assigned quiz chips */}
+        {assignmentsLoading ? (
+          <div className="flex items-center gap-1 text-xs text-gray-400">
+            <Loader2 size={11} className="animate-spin" /> Loading…
+          </div>
+        ) : assignments.length === 0 ? (
+          <p className="text-xs text-gray-400 italic">
+            {isRejected ? 'Cannot assign quizzes to rejected applicants.' : 'No quizzes assigned yet.'}
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {assignments.map((a) => (
+              <span
+                key={a.id}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-800"
+              >
+                <BookOpen size={10} />
+                {a.quiz?.title ?? 'Quiz'}
+                {!isRejected && (
+                  <button
+                    onClick={() => unassignMutation.mutate(a.id)}
+                    disabled={unassignMutation.isPending}
+                    className="ml-0.5 hover:text-red-500 transition-colors disabled:opacity-40"
+                    title="Remove assignment"
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Assign picker inline */}
+        {showAssignPicker && !isRejected && availableQuizzes.length > 0 && (
+          <div className="mt-2 flex items-center gap-2">
+            <select
+              value={selectedQuizId}
+              onChange={(e) => setSelectedQuizId(e.target.value)}
+              className="flex-1 text-xs border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900"
+            >
+              <option value="">— Select a quiz —</option>
+              {availableQuizzes.map((q) => (
+                <option key={q.id} value={q.id}>{q.title}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => selectedQuizId && assignMutation.mutate(selectedQuizId)}
+              disabled={!selectedQuizId || assignMutation.isPending}
+              className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              {assignMutation.isPending ? <Loader2 size={11} className="animate-spin" /> : 'Assign'}
+            </button>
+            <button
+              onClick={() => { setShowAssignPicker(false); setSelectedQuizId(''); }}
+              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {assignMutation.isError && (
+          <p className="text-xs text-red-500 mt-1">Failed to assign quiz. Please try again.</p>
+        )}
+
+        {myQuizzes.length === 0 && !isRejected && (
+          <p className="text-xs text-gray-400 italic mt-1">
+            You have no published quizzes.{' '}
+            <a href="/client/quizzes/create" className="text-primary-600 dark:text-primary-400 hover:underline">Create one</a>.
+          </p>
+        )}
       </div>
     </div>
   );
