@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { profileApi } from '../../api/client';
-import { Loader2, CheckCircle, Upload, X, Building2 } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { SECTORS } from './JobOfferForm';
 
 const lenientUrl = z.string().transform((val) => {
@@ -29,9 +29,6 @@ const inputClass = 'w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200
 
 export default function EntrepriseProfile() {
   const queryClient = useQueryClient();
-  const logoRef = useRef<HTMLInputElement>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['my-profile'],
@@ -57,34 +54,22 @@ export default function EntrepriseProfile() {
     }
   }, [profile, reset]);
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
-  };
-
   const mutation = useMutation({
     mutationFn: (data: FormData) => {
-      const fd = new globalThis.FormData();
-      if (data.company_name)    fd.append('company_name', data.company_name);
-      if (data.bio)             fd.append('bio', data.bio);
-      if (data.company_website) fd.append('company_website', data.company_website);
-      if (data.company_size)    fd.append('company_size', data.company_size);
-      if (data.location)        fd.append('location', data.location);
-      if (data.linkedin_url)    fd.append('linkedin_url', data.linkedin_url);
-      if (data.sector)          fd.append('sectors[0]', data.sector);
-      if (logoFile)             fd.append('logo', logoFile);
-      return profileApi.upsertProfileMultipart(fd);
+      const payload: Record<string, any> = {};
+      if (data.company_name)    payload.company_name = data.company_name;
+      if (data.bio)             payload.bio = data.bio;
+      if (data.company_website) payload.company_website = data.company_website;
+      if (data.company_size)    payload.company_size = data.company_size;
+      if (data.location)        payload.location = data.location;
+      if (data.linkedin_url)    payload.linkedin_url = data.linkedin_url;
+      if (data.sector)          payload.sectors = [data.sector];
+      return profileApi.upsertProfile(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
-      setLogoFile(null);
     },
   });
-
-  const currentLogo = logoPreview
-    ?? (profile?.company_logo_path ? `/storage/${profile.company_logo_path}` : null);
 
   if (isLoading) {
     return (
@@ -107,39 +92,6 @@ export default function EntrepriseProfile() {
         {/* Company identity */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Company Identity</h2>
-
-          {/* Logo upload */}
-          <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
-              {currentLogo ? (
-                <img src={currentLogo} alt="Logo" className="w-16 h-16 rounded-xl object-cover border-2 border-gray-200 dark:border-gray-700" />
-              ) : (
-                <div className="w-16 h-16 rounded-xl bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600">
-                  <Building2 size={24} />
-                </div>
-              )}
-              {logoFile && (
-                <button
-                  type="button"
-                  onClick={() => { setLogoFile(null); setLogoPreview(null); if (logoRef.current) logoRef.current.value = ''; }}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
-                >
-                  <X size={10} />
-                </button>
-              )}
-            </div>
-            <div>
-              <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-              <button
-                type="button"
-                onClick={() => logoRef.current?.click()}
-                className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
-              >
-                <Upload size={14} /> {currentLogo ? 'Change logo' : 'Upload logo'}
-              </button>
-              <p className="text-xs text-gray-400 mt-1">JPG, PNG — max 5MB</p>
-            </div>
-          </div>
 
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Company Name *</label>

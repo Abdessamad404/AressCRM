@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { profileApi } from '../../api/client';
-import { Plus, Trash2, Loader2, CheckCircle, Upload, X, User } from 'lucide-react';
+import { Plus, Trash2, Loader2, CheckCircle } from 'lucide-react';
 import { SECTORS } from './JobOfferForm';
 
 // Accept URLs with or without protocol
@@ -68,9 +68,6 @@ function TagArrayField({
 
 export default function CommercialProfile() {
   const queryClient = useQueryClient();
-  const avatarRef = useRef<HTMLInputElement>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['my-profile'],
@@ -106,40 +103,29 @@ export default function CommercialProfile() {
     }
   }, [profile, reset]);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
-  };
-
   const mutation = useMutation({
     mutationFn: (data: FormData) => {
-      const fd = new globalThis.FormData();
-      if (data.title)        fd.append('title', data.title);
-      if (data.bio)          fd.append('bio', data.bio);
-      if (data.location)     fd.append('location', data.location);
-      if (data.availability) fd.append('availability', data.availability);
-      if (data.linkedin_url) fd.append('linkedin_url', data.linkedin_url);
+      const payload: Record<string, any> = {};
+      if (data.title)        payload.title = data.title;
+      if (data.bio)          payload.bio = data.bio;
+      if (data.location)     payload.location = data.location;
+      if (data.availability) payload.availability = data.availability;
+      if (data.linkedin_url) payload.linkedin_url = data.linkedin_url;
       if (data.experience_years !== '' && data.experience_years != null)
-        fd.append('experience_years', String(data.experience_years));
+        payload.experience_years = data.experience_years;
       if (data.commission_rate !== '' && data.commission_rate != null)
-        fd.append('commission_rate', String(data.commission_rate));
-      fd.append('is_published', data.is_published ? '1' : '0');
-      (data.skills ?? []).forEach((s, i) => s.value && fd.append(`skills[${i}]`, s.value));
-      (data.expertise ?? []).forEach((e, i) => e.value && fd.append(`expertise[${i}]`, e.value));
-      (data.sectors ?? []).forEach((s, i) => s.value && fd.append(`sectors[${i}]`, s.value));
-      (data.achievements ?? []).forEach((a, i) => a.value && fd.append(`achievements[${i}]`, a.value));
-      if (avatarFile) fd.append('avatar', avatarFile);
-      return profileApi.upsertProfileMultipart(fd);
+        payload.commission_rate = data.commission_rate;
+      payload.is_published = data.is_published;
+      payload.skills       = (data.skills ?? []).filter(s => s.value).map(s => s.value);
+      payload.expertise    = (data.expertise ?? []).filter(e => e.value).map(e => e.value);
+      payload.sectors      = (data.sectors ?? []).filter(s => s.value).map(s => s.value);
+      payload.achievements = (data.achievements ?? []).filter(a => a.value).map(a => a.value);
+      return profileApi.upsertProfile(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-profile'] });
-      setAvatarFile(null);
     },
   });
-
-  const currentAvatar = avatarPreview ?? profile?.avatar_url ?? null;
 
   if (isLoading) {
     return (
@@ -169,39 +155,6 @@ export default function CommercialProfile() {
         {/* Identity */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Identity</h2>
-
-          {/* Avatar upload */}
-          <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
-              {currentAvatar ? (
-                <img src={currentAvatar} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700" />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600">
-                  <User size={24} />
-                </div>
-              )}
-              {avatarFile && (
-                <button
-                  type="button"
-                  onClick={() => { setAvatarFile(null); setAvatarPreview(null); if (avatarRef.current) avatarRef.current.value = ''; }}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
-                >
-                  <X size={10} />
-                </button>
-              )}
-            </div>
-            <div>
-              <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-              <button
-                type="button"
-                onClick={() => avatarRef.current?.click()}
-                className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
-              >
-                <Upload size={14} /> {currentAvatar ? 'Change photo' : 'Upload photo'}
-              </button>
-              <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF — max 5MB</p>
-            </div>
-          </div>
 
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Professional Title</label>
